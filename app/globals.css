@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════
+   MeDashboard — Design Tokens
+   Dark-first dashboard theme with brand colors.
+   All layout dimensions and colors are defined here
+   so components reference tokens, not magic numbers.
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* Brand */
+  --color-brand: #6366f1;
+  --color-brand-hover: #818cf8;
+
+  /* Surface layers (dark → light) */
+  --color-surface-0: #09090b;     /* body background */
+  --color-surface-1: #111113;     /* sidebar, cards */
+  --color-surface-2: #1a1a1f;     /* hover states, inputs */
+  --color-surface-3: #252530;     /* elevated elements */
+
+  /* Text */
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #52525b;
+
+  /* Borders */
+  --color-border: #27272a;
+  --color-border-hover: #3f3f46;
+
+  /* Layout dimensions */
+  --sidebar-width: 260px;
+  --navbar-height: 64px;
+
+  /* Feedback colors */
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+}
+
+@theme inline {
+  --color-background: var(--color-surface-0);
+  --color-foreground: var(--color-text-primary);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-surface-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Smooth scrollbar for the main content area */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-3) transparent;
+}
