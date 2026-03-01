@@ -59,3 +59,25 @@ export async function getCustomEvents(): Promise<CustomEvent[]> {
 
     return data;
 }
+
+/**
+ * Fetch a single calendar event by ID.
+ */
+export async function getCalendarEventById(
+    id: string
+): Promise<CalendarEvent | null> {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("calendar_events")
+        .select()
+        .eq("id", id)
+        .single();
+
+    if (error) {
+        console.error("Error fetching event:", error.message);
+        return null;
+    }
+
+    return data;
+}
