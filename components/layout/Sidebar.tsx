@@ -1,24 +1,22 @@
 "use client";
 
 // ─── Sidebar ────────────────────────────────────────────
-// Client Component — wraps NavItem components that need usePathname().
+// Client Component — navigation + user info.
 //
 // WHY "use client"?
 // - NavItem uses usePathname() which is a Client hook
-// - The sidebar as a whole needs to re-render when route changes
+// - The sidebar needs to re-render when route changes
 //   to update the active state highlight
 //
-// ARCHITECTURE NOTE:
-// This Sidebar lives inside (dashboard)/layout.tsx which is a
-// Server Component. The layout NEVER re-mounts when navigating
-// between /notes, /finances, etc. — so the sidebar persists
-// and maintains its state (e.g. collapsed/expanded) across
-// page navigations. This is a key benefit of Next.js layouts.
+// USER DATA:
+// The user object is passed from the dashboard layout (Server Component).
+// The Sidebar doesn't fetch user data itself — it receives it as a prop.
+// This way, the parent controls the data source.
 
 import NavItem from "./NavItem";
+import SignOutButton from "./SignOutButton";
 
 // Navigation configuration — centralized for easy modification.
-// When adding a new module, just add an entry here.
 const NAV_ITEMS = [
     { href: "/notes", icon: "📝", label: "Notes" },
     { href: "/finances", icon: "💰", label: "Finances" },
@@ -26,7 +24,15 @@ const NAV_ITEMS = [
     { href: "/videos", icon: "🎬", label: "Videos" },
 ] as const;
 
-export default function Sidebar() {
+interface SidebarProps {
+    user: {
+        name: string;
+        email: string;
+        avatar?: string;
+    } | null;
+}
+
+export default function Sidebar({ user }: SidebarProps) {
     return (
         <aside
             className="
@@ -57,19 +63,33 @@ export default function Sidebar() {
                 ))}
             </nav>
 
-            {/* ── Footer — user info placeholder (Phase 5: Auth) ── */}
+            {/* ── Footer — user info + sign out ── */}
             <div className="border-t border-[var(--color-border)] px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-[var(--color-surface-3)]" />
-                    <div>
-                        <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                            Santiago
-                        </p>
-                        <p className="text-xs text-[var(--color-text-muted)]">
-                            Free plan
-                        </p>
+                {user ? (
+                    <div className="flex items-center gap-3">
+                        {/* Avatar — uses Google profile picture if available */}
+                        {user.avatar ? (
+                            <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className="h-8 w-8 rounded-full object-cover"
+                                referrerPolicy="no-referrer"
+                            />
+                        ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-brand)] text-xs font-bold text-white">
+                                {user.name.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                                {user.name}
+                            </p>
+                            <SignOutButton />
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <p className="text-xs text-[var(--color-text-muted)]">Not signed in</p>
+                )}
             </div>
         </aside>
     );
