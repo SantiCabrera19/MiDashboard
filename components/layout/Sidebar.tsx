@@ -18,6 +18,7 @@ import SignOutButton from "./SignOutButton";
 
 // Navigation configuration — centralized for easy modification.
 const NAV_ITEMS = [
+    { href: "/home", icon: "🏠", label: "Home" },
     { href: "/notes", icon: "📝", label: "Notes" },
     { href: "/finances", icon: "💰", label: "Finances" },
     { href: "/calendar", icon: "📅", label: "Calendar" },
