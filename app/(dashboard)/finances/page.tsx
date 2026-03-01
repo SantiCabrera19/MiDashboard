@@ -2,12 +2,17 @@
 // Server Component — fetches REAL financial data from Supabase.
 // Route: /finances
 //
-// Uses parallel data fetching with Promise.all for performance.
-// Three queries run simultaneously instead of sequentially.
+// ARCHITECTURE:
+// Same pattern as Notes: Server Component fetches data,
+// Client Components handle interactivity (forms, delete, edit).
+// Categories are fetched here and passed to child components
+// so they can populate dropdowns without separate client fetches.
 
 import type { Metadata } from "next";
-import { Card, Badge, Button, EmptyState } from "@/components/ui";
-import { getTransactions, getMonthlySummary } from "@/lib/data/transactions";
+import { Card, EmptyState } from "@/components/ui";
+import { getTransactions, getCategories, getMonthlySummary } from "@/lib/data/transactions";
+import TransactionRow from "./TransactionRow";
+import NewTransactionButton from "./NewTransactionButton";
 
 export const metadata: Metadata = {
     title: "Finances",
@@ -19,13 +24,13 @@ function formatCurrency(amount: number): string {
 }
 
 export default async function FinancesPage() {
-    // Parallel fetch — both queries run at the same time
-    const [transactions, monthlySummary] = await Promise.all([
-        getTransactions(10),
+    // Parallel fetch — all three run simultaneously
+    const [transactions, categories, monthlySummary] = await Promise.all([
+        getTransactions(),
+        getCategories(),
         getMonthlySummary(),
     ]);
 
-    // Get current month summary
     const currentMonth = monthlySummary[0];
 
     return (
@@ -37,10 +42,10 @@ export default async function FinancesPage() {
                         💰 Finances
                     </h1>
                     <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                        Your complete financial overview
+                        {transactions.length} {transactions.length === 1 ? "transaction" : "transactions"} total
                     </p>
                 </div>
-                <Button size="sm">+ Transaction</Button>
+                <NewTransactionButton categories={categories} />
             </div>
 
             {/* Summary cards — from monthly_summary view */}
@@ -77,36 +82,15 @@ export default async function FinancesPage() {
             {transactions.length > 0 ? (
                 <Card>
                     <h2 className="mb-4 text-sm font-semibold text-[var(--color-text-primary)]">
-                        Recent Transactions
+                        All Transactions
                     </h2>
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                         {transactions.map((t) => (
-                            <div
+                            <TransactionRow
                                 key={t.id}
-                                className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-[var(--color-surface-2)]"
-                            >
-                                <div>
-                                    <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                                        {t.description ?? "No description"}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <Badge variant={t.type === "income" ? "success" : "default"}>
-                                            {t.type}
-                                        </Badge>
-                                        <span className="text-xs text-[var(--color-text-muted)]">
-                                            {new Date(t.transaction_date).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </div>
-                                <span
-                                    className={`text-sm font-semibold ${t.type === "income"
-                                            ? "text-[var(--color-success)]"
-                                            : "text-[var(--color-text-primary)]"
-                                        }`}
-                                >
-                                    {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount)}
-                                </span>
-                            </div>
+                                transaction={t}
+                                categories={categories}
+                            />
                         ))}
                     </div>
                 </Card>
