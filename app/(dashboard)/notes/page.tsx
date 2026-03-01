@@ -2,14 +2,18 @@
 // Server Component — fetches REAL notes from Supabase.
 // Route: /notes
 //
-// This is an async Server Component — it can await data directly.
-// No useEffect, no loading state needed (loading.tsx handles that).
-// The data function getNotes() handles the Supabase query internally,
-// so this page doesn't know anything about Supabase.
+// ARCHITECTURE:
+// - This page is a Server Component → can await data directly
+// - NoteCard is a Client Component → handles edit/delete/pin
+// - NewNoteButton is a Client Component → handles create modal
+// - Server fetches data, Client handles interactivity
+// - Zero unnecessary re-renders: only NoteCard re-renders on action
 
 import type { Metadata } from "next";
-import { Card, Badge, Button, Input, EmptyState } from "@/components/ui";
+import { Input, EmptyState } from "@/components/ui";
 import { getNotes } from "@/lib/data/notes";
+import NoteCard from "./NoteCard";
+import NewNoteButton from "./NewNoteButton";
 
 export const metadata: Metadata = {
     title: "Notes",
@@ -17,7 +21,6 @@ export const metadata: Metadata = {
 };
 
 export default async function NotesPage() {
-    // Fetch real data from Supabase — fully typed as Note[]
     const notes = await getNotes();
 
     return (
@@ -32,37 +35,19 @@ export default async function NotesPage() {
                         {notes.length} {notes.length === 1 ? "note" : "notes"} total
                     </p>
                 </div>
-                <Button size="sm">+ New Note</Button>
+                <NewNoteButton />
             </div>
 
-            {/* Search — will be functional in Phase 4 */}
+            {/* Search — will be functional later */}
             <div className="mb-6">
                 <Input placeholder="Search notes..." />
             </div>
 
-            {/* Conditional rendering: data or empty state */}
+            {/* Notes grid or empty state */}
             {notes.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {notes.map((note) => (
-                        <Card key={note.id} interactive>
-                            <div className="mb-3 flex items-start justify-between gap-2">
-                                <h3 className="font-semibold text-[var(--color-text-primary)] line-clamp-1">
-                                    {note.title ?? "Untitled"}
-                                </h3>
-                                <div className="flex gap-1.5 shrink-0">
-                                    {note.pinned && <Badge variant="info">📌</Badge>}
-                                    {note.is_markdown && <Badge>MD</Badge>}
-                                </div>
-                            </div>
-                            <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3">
-                                {note.content}
-                            </p>
-                            {note.updated_at && (
-                                <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-                                    Updated {new Date(note.updated_at).toLocaleDateString()}
-                                </p>
-                            )}
-                        </Card>
+                        <NoteCard key={note.id} note={note} />
                     ))}
                 </div>
             ) : (
