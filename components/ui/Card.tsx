@@ -36,9 +36,10 @@ export default function Card({
             className={`
         rounded-xl border border-[var(--color-border)]
         bg-[var(--color-surface-1)]
+        transition-all duration-200 ease-out
         ${!noPadding ? "p-5" : ""}
         ${interactive
-                    ? "cursor-pointer transition-all duration-150 hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface-2)] hover:shadow-lg hover:shadow-black/10"
+                    ? "cursor-pointer hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface-2)] hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-0.5"
                     : ""
                 }
         ${className}

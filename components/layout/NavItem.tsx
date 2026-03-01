@@ -29,16 +29,19 @@ export default function NavItem({ href, icon, label }: NavItemProps) {
         <Link
             href={href}
             className={`
-        flex items-center gap-3 rounded-lg px-3 py-2.5
-        text-sm font-medium transition-all duration-150
+        relative flex items-center gap-3 rounded-lg px-3 py-2.5
+        text-sm font-medium transition-all duration-200 ease-out
         ${isActive
                     ? "bg-[var(--color-brand)] text-white shadow-md shadow-indigo-500/20"
-                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)]"
+                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-primary)] hover:translate-x-0.5"
                 }
       `}
         >
-            <span className="text-lg">{icon}</span>
+            <span className={`text-lg transition-transform duration-200 ${isActive ? "scale-110" : ""}`}>{icon}</span>
             <span>{label}</span>
+            {isActive && (
+                <span className="absolute -left-3 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-white/80" />
+            )}
         </Link>
     );
 }
