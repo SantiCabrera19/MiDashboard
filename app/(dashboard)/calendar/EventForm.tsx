@@ -10,7 +10,7 @@
 // - Reminder minutes input
 
 import { useState, useTransition } from "react";
-import { Modal, Input, Button } from "@/components/ui";
+import { Modal, Input, Button, useToast } from "@/components/ui";
 import { createEvent, updateEvent } from "@/lib/actions/calendar";
 import type { CalendarEvent } from "@/lib/data/calendar";
 
@@ -54,6 +54,7 @@ function parseDatetime(iso: string | null | undefined) {
 
 export default function EventForm({ event, open, onClose }: EventFormProps) {
     const isEditing = !!event;
+    const toast = useToast();
 
     const startParts = parseDatetime(event?.start_time);
     const endParts = parseDatetime(event?.end_time);
@@ -120,8 +121,10 @@ export default function EventForm({ event, open, onClose }: EventFormProps) {
                     setReminderMinutes("");
                 }
                 onClose();
+                toast.success(isEditing ? "Event updated" : "Event created");
             } else {
                 setError(result.error ?? "Something went wrong");
+                toast.error(result.error ?? "Failed to save event");
             }
         });
     }
@@ -263,8 +266,8 @@ export default function EventForm({ event, open, onClose }: EventFormProps) {
                                 type="button"
                                 onClick={() => setColor(color === c ? "" : c)}
                                 className={`h-7 w-7 rounded-full transition-all ${color === c
-                                        ? "ring-2 ring-white ring-offset-2 ring-offset-[var(--color-surface-1)] scale-110"
-                                        : "hover:scale-110"
+                                    ? "ring-2 ring-white ring-offset-2 ring-offset-[var(--color-surface-1)] scale-110"
+                                    : "hover:scale-110"
                                     }`}
                                 style={{ backgroundColor: c }}
                             />

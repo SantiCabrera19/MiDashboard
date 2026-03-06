@@ -15,23 +15,24 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Card, Badge, Button } from "@/components/ui";
+import { Card, Badge, Button, useToast } from "@/components/ui";
 import { deleteNote, togglePin } from "@/lib/actions/notes";
 import type { Note } from "@/lib/data/notes";
-import NoteForm from "./NoteForm";
+import { isHtmlContent, plainTextToHtml } from "@/lib/utils/note-content";
 
 interface NoteCardProps {
     note: Note;
 }
 
 export default function NoteCard({ note }: NoteCardProps) {
-    const [showEditForm, setShowEditForm] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const toast = useToast();
 
     function handlePin() {
         startTransition(async () => {
             await togglePin(note.id, note.pinned ?? false);
+            toast.success(note.pinned ? "Note unpinned" : "Note pinned");
         });
     }
 
@@ -40,6 +41,9 @@ export default function NoteCard({ note }: NoteCardProps) {
             const result = await deleteNote(note.id);
             if (result.success) {
                 setShowDeleteConfirm(false);
+                toast.success("Note deleted");
+            } else {
+                toast.error("Failed to delete note");
             }
         });
     }
@@ -61,9 +65,14 @@ export default function NoteCard({ note }: NoteCardProps) {
                     </div>
 
                     {/* Content preview */}
-                    <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3">
-                        {note.content}
-                    </p>
+                    <div
+                        className="text-sm text-[var(--color-text-secondary)] line-clamp-3 prose-sm prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{
+                            __html: isHtmlContent(note.content)
+                                ? note.content
+                                : plainTextToHtml(note.content),
+                        }}
+                    />
 
                     {/* Date */}
                     {note.updated_at && (
@@ -83,14 +92,15 @@ export default function NoteCard({ note }: NoteCardProps) {
                     >
                         {note.pinned ? "📌" : "📍"}
                     </button>
-                    <button
-                        onClick={() => setShowEditForm(true)}
-                        disabled={isPending}
-                        className="rounded-md p-1.5 text-xs hover:bg-[var(--color-surface-3)] transition-colors"
-                        title="Edit"
-                    >
-                        ✏️
-                    </button>
+                    <Link href={`/notes/${note.id}/edit`}>
+                        <button
+                            disabled={isPending}
+                            className="rounded-md p-1.5 text-xs hover:bg-[var(--color-surface-3)] transition-colors"
+                            title="Edit"
+                        >
+                            ✏️
+                        </button>
+                    </Link>
                     <button
                         onClick={() => setShowDeleteConfirm(true)}
                         disabled={isPending}
@@ -101,13 +111,6 @@ export default function NoteCard({ note }: NoteCardProps) {
                     </button>
                 </div>
             </Card>
-
-            {/* Edit Modal — reuses NoteForm in edit mode */}
-            <NoteForm
-                note={note}
-                open={showEditForm}
-                onClose={() => setShowEditForm(false)}
-            />
 
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (

@@ -9,6 +9,8 @@
 // Navbar also persists. The page title will be set dynamically
 // via metadata, not here — this is just the visual bar.
 
+import Link from "next/link";
+
 export default function Navbar() {
     return (
         <header
@@ -22,16 +24,13 @@ export default function Navbar() {
       "
             style={{ height: "var(--navbar-height)" }}
         >
-            {/* Left side — breadcrumb / search placeholder */}
-            <div className="flex items-center gap-3">
-                <p className="text-sm text-[var(--color-text-muted)]">
-                    Dashboard
-                </p>
-            </div>
+            {/* Left side — spacer reserved for future breadcrumbs */}
+            <span />
 
-            {/* Right side — actions placeholder (notifications, settings) */}
+            {/* Right side — actions */}
             <div className="flex items-center gap-2">
-                <button
+                <Link
+                    href="/notifications"
                     className="
             rounded-lg p-2
             text-[var(--color-text-secondary)]
@@ -42,8 +41,9 @@ export default function Navbar() {
                     aria-label="Notifications"
                 >
                     🔔
-                </button>
-                <button
+                </Link>
+                <Link
+                    href="/settings"
                     className="
             rounded-lg p-2
             text-[var(--color-text-secondary)]
@@ -54,7 +54,7 @@ export default function Navbar() {
                     aria-label="Settings"
                 >
                     ⚙️
-                </button>
+                </Link>
             </div>
         </header>
     );

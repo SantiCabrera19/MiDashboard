@@ -16,6 +16,7 @@
 
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
+import { ToastProvider } from "@/components/ui";
 import { getUser } from "@/lib/actions/auth";
 
 export default async function DashboardLayout({
@@ -39,21 +40,20 @@ export default async function DashboardLayout({
         : null;
 
     return (
-        <div className="flex min-h-screen">
-            {/* Sidebar — fixed position, receives user data */}
-            <Sidebar user={sidebarUser} />
+        <ToastProvider>
+            <div className="flex min-h-screen">
+                {/* Sidebar — fixed position, receives user data */}
+                <Sidebar user={sidebarUser} />
 
-            {/* Main content area — offset by sidebar width */}
-            <div
-                className="flex flex-1 flex-col"
-                style={{ marginLeft: "var(--sidebar-width)" }}
-            >
-                {/* Navbar — sticky at top, persists across pages */}
-                <Navbar />
+                {/* Main content area — full-width on mobile, offset on desktop */}
+                <div className="flex flex-1 flex-col lg:ml-[var(--sidebar-width)]">
+                    {/* Navbar — sticky at top, persists across pages */}
+                    <Navbar />
 
-                {/* Page content — THIS is what changes on navigation */}
-                <main className="flex-1 p-6">{children}</main>
+                    {/* Page content — THIS is what changes on navigation */}
+                    <main className="flex-1 p-4 lg:p-6">{children}</main>
+                </div>
             </div>
-        </div>
+        </ToastProvider>
     );
 }

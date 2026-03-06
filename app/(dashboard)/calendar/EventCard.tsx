@@ -5,7 +5,7 @@
 // Hover reveals edit and delete actions.
 
 import { useState, useTransition } from "react";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, useToast } from "@/components/ui";
 import { deleteEvent } from "@/lib/actions/calendar";
 import EventForm from "./EventForm";
 import type { CalendarEvent } from "@/lib/data/calendar";
@@ -40,11 +40,17 @@ export default function EventCard({ event }: EventCardProps) {
     const [showEdit, setShowEdit] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const toast = useToast();
 
     function handleDelete() {
         startTransition(async () => {
             const result = await deleteEvent(event.id);
-            if (result.success) setShowDelete(false);
+            if (result.success) {
+                setShowDelete(false);
+                toast.success("Event deleted");
+            } else {
+                toast.error("Failed to delete event");
+            }
         });
     }
 

@@ -9,7 +9,7 @@
 // - Receives categories for the dropdown
 
 import { useState, useTransition } from "react";
-import { Modal, Input, Button } from "@/components/ui";
+import { Modal, Input, Button, useToast } from "@/components/ui";
 import { createTransaction, updateTransaction } from "@/lib/actions/transactions";
 import type { Transaction, Category } from "@/lib/data/transactions";
 
@@ -35,6 +35,7 @@ export default function TransactionForm({
     onClose,
 }: TransactionFormProps) {
     const isEditing = !!transaction;
+    const toast = useToast();
 
     const [type, setType] = useState(transaction?.type ?? "expense");
     const [amount, setAmount] = useState(transaction?.amount?.toString() ?? "");
@@ -84,8 +85,10 @@ export default function TransactionForm({
                     setDate(new Date().toISOString().split("T")[0]);
                 }
                 onClose();
+                toast.success(isEditing ? "Transaction updated" : "Transaction created");
             } else {
                 setError(result.error ?? "Something went wrong");
+                toast.error(result.error ?? "Failed to save transaction");
             }
         });
     }
@@ -104,8 +107,8 @@ export default function TransactionForm({
                         type="button"
                         onClick={() => { setType("income"); setCategoryId(""); }}
                         className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${type === "income"
-                                ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/40"
-                                : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
+                            ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/40"
+                            : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
                             }`}
                     >
                         ↑ Income
@@ -114,8 +117,8 @@ export default function TransactionForm({
                         type="button"
                         onClick={() => { setType("expense"); setCategoryId(""); }}
                         className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${type === "expense"
-                                ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/40"
-                                : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
+                            ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/40"
+                            : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
                             }`}
                     >
                         ↓ Expense

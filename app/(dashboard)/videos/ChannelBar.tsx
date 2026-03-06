@@ -6,7 +6,7 @@
 // Also includes the "Follow Channel" button.
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui";
+import { Button, useToast } from "@/components/ui";
 import {
     unfollowChannel,
     syncChannelVideos,
@@ -29,15 +29,20 @@ export default function ChannelBar({
     const [showForm, setShowForm] = useState(false);
     const [syncingId, setSyncingId] = useState<string | null>(null);
     const [isSyncingAll, startSyncAll] = useTransition();
+    const toast = useToast();
 
     function handleSync(channelId: string) {
         setSyncingId(channelId);
-        syncChannelVideos(channelId).finally(() => setSyncingId(null));
+        syncChannelVideos(channelId)
+            .then(() => toast.success("Channel synced"))
+            .catch(() => toast.error("Sync failed"))
+            .finally(() => setSyncingId(null));
     }
 
     function handleSyncAll() {
         startSyncAll(async () => {
             await syncAllChannels();
+            toast.success("All channels synced");
         });
     }
 
@@ -48,8 +53,8 @@ export default function ChannelBar({
                 <button
                     onClick={() => onSelectChannel(null)}
                     className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${selectedChannelId === null
-                            ? "bg-[var(--color-brand)] text-white"
-                            : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
+                        ? "bg-[var(--color-brand)] text-white"
+                        : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
                         }`}
                 >
                     All
@@ -65,8 +70,8 @@ export default function ChannelBar({
                                 )
                             }
                             className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${selectedChannelId === ch.id
-                                    ? "bg-[var(--color-brand)] text-white"
-                                    : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
+                                ? "bg-[var(--color-brand)] text-white"
+                                : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
                                 }`}
                         >
                             {ch.channel_thumbnail && (
@@ -98,7 +103,9 @@ export default function ChannelBar({
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (confirm(`Unfollow ${ch.channel_name}?`)) {
-                                        unfollowChannel(ch.id);
+                                        unfollowChannel(ch.id).then(() =>
+                                            toast.success(`Unfollowed ${ch.channel_name}`)
+                                        );
                                     }
                                 }}
                                 className="rounded px-2 py-0.5 text-xs hover:bg-red-500/10 text-red-400 transition-colors"

@@ -47,7 +47,7 @@ export async function getNoteById(id: string): Promise<Note | null> {
         .from("notes")
         .select()
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
     if (error) {
         console.error("Error fetching note:", error.message);

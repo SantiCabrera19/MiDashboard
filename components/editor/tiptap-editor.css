@@ -1,0 +1,142 @@
+/* ─── TipTap Editor Styles ───────────────────────────────
+   Explicit styles for the ProseMirror editor content.
+   
+   WHY not just rely on Tailwind prose?
+   Tailwind `prose` classes apply styles to standard HTML tags,
+   but ProseMirror wraps content in a div.ProseMirror container.
+   Some styles need explicit targeting to render correctly,
+   especially in dark themes where browser defaults are wrong.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Placeholder ───────────────────────────────────────── */
+.tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: var(--color-text-muted);
+    pointer-events: none;
+    height: 0;
+}
+
+/* ─── Headings ──────────────────────────────────────────── */
+.tiptap h1 {
+    font-size: 2em;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-text-primary);
+}
+
+.tiptap h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-primary);
+}
+
+.tiptap h3 {
+    font-size: 1.25em;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-primary);
+}
+
+/* ─── Paragraphs ────────────────────────────────────────── */
+.tiptap p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+/* ─── Lists ─────────────────────────────────────────────── */
+.tiptap ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tiptap ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tiptap li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.tiptap li p {
+    margin: 0;
+}
+
+/* ─── Blockquote ────────────────────────────────────────── */
+.tiptap blockquote {
+    border-left: 3px solid var(--color-brand, #6366f1);
+    padding-left: 1rem;
+    margin-left: 0;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* ─── Code Block ────────────────────────────────────────── */
+.tiptap pre {
+    background-color: var(--color-surface-0, #09090b);
+    border: 1px solid var(--color-border, #27272a);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    overflow-x: auto;
+}
+
+.tiptap pre code {
+    background: none;
+    color: #e4e4e7;
+    font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    line-height: 1.6;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* Inline code (NOT inside pre) */
+.tiptap :not(pre)>code {
+    background-color: var(--color-surface-3, #252530);
+    color: #f0abfc;
+    padding: 0.15em 0.35em;
+    border-radius: 0.25rem;
+    font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+    font-size: 0.875em;
+}
+
+/* ─── Horizontal Rule ───────────────────────────────────── */
+.tiptap hr {
+    border: none;
+    border-top: 1px solid var(--color-border, #27272a);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ─── Strong / Em / Strike ──────────────────────────────── */
+.tiptap strong {
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.tiptap em {
+    font-style: italic;
+}
+
+.tiptap s {
+    text-decoration: line-through;
+    opacity: 0.7;
+}

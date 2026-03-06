@@ -5,7 +5,7 @@
 // User pastes a URL or @handle, system resolves it via YouTube API.
 
 import { useState, useTransition } from "react";
-import { Modal, Input, Button } from "@/components/ui";
+import { Modal, Input, Button, useToast } from "@/components/ui";
 import { followChannel } from "@/lib/actions/videos";
 
 interface ChannelFormProps {
@@ -17,6 +17,7 @@ export default function ChannelForm({ open, onClose }: ChannelFormProps) {
     const [input, setInput] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const toast = useToast();
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -33,8 +34,10 @@ export default function ChannelForm({ open, onClose }: ChannelFormProps) {
             if (result.success) {
                 setInput("");
                 onClose();
+                toast.success("Channel followed!");
             } else {
                 setError(result.error ?? "Something went wrong");
+                toast.error(result.error ?? "Failed to follow channel");
             }
         });
     }

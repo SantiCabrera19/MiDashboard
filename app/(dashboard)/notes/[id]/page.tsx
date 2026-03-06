@@ -12,7 +12,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getNoteById } from "@/lib/data/notes";
-import { Badge, Button } from "@/components/ui";
+import { isHtmlContent, plainTextToHtml } from "@/lib/utils/note-content";
+import { Badge } from "@/components/ui";
 import Link from "next/link";
 import NoteDetailActions from "./NoteDetailActions";
 
@@ -23,6 +24,11 @@ export async function generateMetadata({
     params: Promise<{ id: string }>;
 }): Promise<Metadata> {
     const { id } = await params;
+
+    if (id === "new") {
+        return { title: "New Note" };
+    }
+
     const note = await getNoteById(id);
 
     return {
@@ -37,6 +43,13 @@ export default async function NoteDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
+
+    // Safety check: Next.js might accidentally route /notes/new here
+    // during development or if the static /notes/new route isn't caught first.
+    if (id === "new") {
+        notFound();
+    }
+
     const note = await getNoteById(id);
 
     // If note not found → Next.js shows the nearest not-found.tsx or 404
@@ -80,9 +93,17 @@ export default async function NoteDetailPage({
 
             {/* Note content */}
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
-                <div className="whitespace-pre-wrap text-sm text-[var(--color-text-primary)] leading-relaxed">
-                    {note.content}
-                </div>
+                {isHtmlContent(note.content) ? (
+                    <div
+                        className="prose prose-invert max-w-none leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: note.content }}
+                    />
+                ) : (
+                    <div
+                        className="prose prose-invert max-w-none leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: plainTextToHtml(note.content) }}
+                    />
+                )}
             </div>
         </div>
     );

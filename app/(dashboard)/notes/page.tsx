@@ -10,9 +10,9 @@
 // - Zero unnecessary re-renders: only NoteCard re-renders on action
 
 import type { Metadata } from "next";
-import { Input, EmptyState } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { getNotes } from "@/lib/data/notes";
-import NoteCard from "./NoteCard";
+import NoteListClient from "./NoteListClient";
 import NewNoteButton from "./NewNoteButton";
 
 export const metadata: Metadata = {
@@ -38,18 +38,8 @@ export default async function NotesPage() {
                 <NewNoteButton />
             </div>
 
-            {/* Search — will be functional later */}
-            <div className="mb-6">
-                <Input placeholder="Search notes..." />
-            </div>
-
-            {/* Notes grid or empty state */}
             {notes.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {notes.map((note) => (
-                        <NoteCard key={note.id} note={note} />
-                    ))}
-                </div>
+                <NoteListClient notes={notes} />
             ) : (
                 <EmptyState
                     icon="📝"

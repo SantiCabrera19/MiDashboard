@@ -10,9 +10,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import Link from "next/link";
+import { Button, useToast } from "@/components/ui";
 import { deleteNote, togglePin } from "@/lib/actions/notes";
-import NoteForm from "../NoteForm";
 import type { Note } from "@/lib/data/notes";
 
 interface NoteDetailActionsProps {
@@ -21,13 +21,14 @@ interface NoteDetailActionsProps {
 
 export default function NoteDetailActions({ note }: NoteDetailActionsProps) {
     const router = useRouter();
-    const [showEditForm, setShowEditForm] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const toast = useToast();
 
     function handlePin() {
         startTransition(async () => {
             await togglePin(note.id, note.pinned ?? false);
+            toast.success(note.pinned ? "Note unpinned" : "Note pinned");
         });
     }
 
@@ -35,8 +36,10 @@ export default function NoteDetailActions({ note }: NoteDetailActionsProps) {
         startTransition(async () => {
             const result = await deleteNote(note.id);
             if (result.success) {
-                // Navigate back to notes list after deletion
+                toast.success("Note deleted");
                 router.push("/notes");
+            } else {
+                toast.error("Failed to delete note");
             }
         });
     }
@@ -52,14 +55,15 @@ export default function NoteDetailActions({ note }: NoteDetailActionsProps) {
                 >
                     {note.pinned ? "Unpin" : "📌 Pin"}
                 </Button>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowEditForm(true)}
-                    disabled={isPending}
-                >
-                    ✏️ Edit
-                </Button>
+                <Link href={`/notes/${note.id}/edit`}>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={isPending}
+                    >
+                        ✏️ Edit
+                    </Button>
+                </Link>
                 <Button
                     variant="danger"
                     size="sm"
@@ -69,13 +73,6 @@ export default function NoteDetailActions({ note }: NoteDetailActionsProps) {
                     🗑️ Delete
                 </Button>
             </div>
-
-            {/* Edit Modal */}
-            <NoteForm
-                note={note}
-                open={showEditForm}
-                onClose={() => setShowEditForm(false)}
-            />
 
             {/* Delete Confirmation */}
             {showDeleteConfirm && (

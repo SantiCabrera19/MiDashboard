@@ -5,7 +5,7 @@
 // Handles edit and delete actions with modals.
 
 import { useState, useTransition } from "react";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, useToast } from "@/components/ui";
 import { deleteTransaction } from "@/lib/actions/transactions";
 import TransactionForm from "./TransactionForm";
 import type { Transaction, Category } from "@/lib/data/transactions";
@@ -23,11 +23,17 @@ export default function TransactionRow({ transaction: t, categories }: Transacti
     const [showEdit, setShowEdit] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const toast = useToast();
 
     function handleDelete() {
         startTransition(async () => {
             const result = await deleteTransaction(t.id);
-            if (result.success) setShowDelete(false);
+            if (result.success) {
+                setShowDelete(false);
+                toast.success("Transaction deleted");
+            } else {
+                toast.error("Failed to delete transaction");
+            }
         });
     }
 
@@ -58,8 +64,8 @@ export default function TransactionRow({ transaction: t, categories }: Transacti
                 <div className="flex items-center gap-3">
                     <span
                         className={`text-sm font-semibold ${t.type === "income"
-                                ? "text-[var(--color-success)]"
-                                : "text-[var(--color-text-primary)]"
+                            ? "text-[var(--color-success)]"
+                            : "text-[var(--color-text-primary)]"
                             }`}
                     >
                         {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount)}

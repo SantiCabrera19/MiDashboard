@@ -16,9 +16,10 @@ interface NavItemProps {
     href: string;
     icon: string;
     label: string;
+    onClick?: () => void;
 }
 
-export default function NavItem({ href, icon, label }: NavItemProps) {
+export default function NavItem({ href, icon, label, onClick }: NavItemProps) {
     const pathname = usePathname();
 
     // Match exact path OR subpaths (e.g. /notes/abc still highlights "Notes")
@@ -28,6 +29,7 @@ export default function NavItem({ href, icon, label }: NavItemProps) {
     return (
         <Link
             href={href}
+            onClick={onClick}
             className={`
         relative flex items-center gap-3 rounded-lg px-3 py-2.5
         text-sm font-medium transition-all duration-200 ease-out
