@@ -15,6 +15,7 @@ import { getNotes } from "@/lib/data/notes";
 import { getTransactions, getMonthlySummary } from "@/lib/data/transactions";
 import { getCalendarEvents } from "@/lib/data/calendar";
 import { getLatestVideos, getChannels } from "@/lib/data/videos";
+import { getUserPreferences, getUserProfile } from "@/lib/data/settings";
 
 export const metadata: Metadata = {
     title: "Home — MeDashboard",
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
     // Parallel fetch — all modules at once
-    const [user, notes, transactions, monthlySummary, events, videos, channels] =
+    const [user, notes, transactions, monthlySummary, events, videos, channels, preferences, profile] =
         await Promise.all([
             getUser(),
             getNotes(),
@@ -32,10 +33,18 @@ export default async function HomePage() {
             getCalendarEvents(),
             getLatestVideos(100),
             getChannels(),
+            getUserPreferences(),
+            getUserProfile(),
         ]);
 
+    // Widget visibility — defaults to all visible
+    const statCards = preferences?.visible_stat_cards ?? { notes: true, balance: true, events: true, videos: true };
+    const sections = preferences?.visible_sections ?? { recent_notes: true, upcoming_events: true, recent_transactions: true };
+
     // ─── Computed values ────────────────────────────────
+    // Display name priority: full profile name → Google first name → email prefix → fallback
     const userName =
+        profile?.display_name ??
         user?.user_metadata?.full_name?.split(" ")[0] ??
         user?.email?.split("@")[0] ??
         "there";
@@ -93,242 +102,259 @@ export default async function HomePage() {
             {/* ─── Stat Cards ──────────────────────────────── */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {/* Notes */}
-                <Link href="/notes">
-                    <Card interactive className="group">
-                        <div className="flex items-center justify-between">
-                            <span className="text-2xl">📝</span>
-                            <Badge>{pinnedNotes.length} pinned</Badge>
-                        </div>
-                        <p className="mt-3 text-2xl font-bold text-[var(--color-text-primary)]">
-                            {notes.length}
-                        </p>
-                        <p className="text-sm text-[var(--color-text-secondary)]">
-                            Total notes
-                        </p>
-                    </Card>
-                </Link>
+                {statCards.notes && (
+                    <Link href="/notes">
+                        <Card interactive className="group">
+                            <div className="flex items-center justify-between">
+                                <span className="text-2xl">📝</span>
+                                <Badge>{pinnedNotes.length} pinned</Badge>
+                            </div>
+                            <p className="mt-3 text-2xl font-bold text-[var(--color-text-primary)]">
+                                {notes.length}
+                            </p>
+                            <p className="text-sm text-[var(--color-text-secondary)]">
+                                Total notes
+                            </p>
+                        </Card>
+                    </Link>
+                )}
 
                 {/* Balance */}
-                <Link href="/finances">
-                    <Card interactive className="group">
-                        <div className="flex items-center justify-between">
-                            <span className="text-2xl">💰</span>
-                            <Badge variant={monthBalance >= 0 ? "success" : "error"}>
-                                {monthBalance >= 0 ? "↑" : "↓"} this month
-                            </Badge>
-                        </div>
-                        <p
-                            className={`mt-3 text-2xl font-bold ${monthBalance >= 0
-                                    ? "text-emerald-400"
-                                    : "text-red-400"
-                                }`}
-                        >
-                            ${Math.abs(monthBalance).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-[var(--color-text-secondary)]">
-                            Net balance
-                        </p>
-                    </Card>
-                </Link>
+                {statCards.balance && (
+                    <Link href="/finances">
+                        <Card interactive className="group">
+                            <div className="flex items-center justify-between">
+                                <span className="text-2xl">💰</span>
+                                <Badge variant={monthBalance >= 0 ? "success" : "error"}>
+                                    {monthBalance >= 0 ? "↑" : "↓"} this month
+                                </Badge>
+                            </div>
+                            <p
+                                className={`mt-3 text-2xl font-bold ${monthBalance >= 0
+                                        ? "text-emerald-400"
+                                        : "text-red-400"
+                                    }`}
+                            >
+                                ${Math.abs(monthBalance).toLocaleString()}
+                            </p>
+                            <p className="text-sm text-[var(--color-text-secondary)]">
+                                Net balance
+                            </p>
+                        </Card>
+                    </Link>
+                )}
 
                 {/* Today&apos;s Events */}
-                <Link href="/calendar">
-                    <Card interactive className="group">
-                        <div className="flex items-center justify-between">
-                            <span className="text-2xl">📅</span>
-                            {todayEvents.length > 0 && (
-                                <Badge variant="info">{todayEvents.length} today</Badge>
-                            )}
-                        </div>
-                        <p className="mt-3 text-2xl font-bold text-[var(--color-text-primary)]">
-                            {events.length}
-                        </p>
-                        <p className="text-sm text-[var(--color-text-secondary)]">
-                            Total events
-                        </p>
-                    </Card>
-                </Link>
+                {statCards.events && (
+                    <Link href="/calendar">
+                        <Card interactive className="group">
+                            <div className="flex items-center justify-between">
+                                <span className="text-2xl">📅</span>
+                                {todayEvents.length > 0 && (
+                                    <Badge variant="info">{todayEvents.length} today</Badge>
+                                )}
+                            </div>
+                            <p className="mt-3 text-2xl font-bold text-[var(--color-text-primary)]">
+                                {events.length}
+                            </p>
+                            <p className="text-sm text-[var(--color-text-secondary)]">
+                                Total events
+                            </p>
+                        </Card>
+                    </Link>
+                )}
 
                 {/* Unwatched Videos */}
-                <Link href="/videos">
-                    <Card interactive className="group">
-                        <div className="flex items-center justify-between">
-                            <span className="text-2xl">🎬</span>
-                            <Badge>{channels.length} channels</Badge>
-                        </div>
-                        <p className="mt-3 text-2xl font-bold text-[var(--color-text-primary)]">
-                            {unwatchedVideos.length}
-                        </p>
-                        <p className="text-sm text-[var(--color-text-secondary)]">
-                            Unwatched videos
-                        </p>
-                    </Card>
-                </Link>
+                {statCards.videos && (
+                    <Link href="/videos">
+                        <Card interactive className="group">
+                            <div className="flex items-center justify-between">
+                                <span className="text-2xl">🎬</span>
+                                <Badge>{channels.length} channels</Badge>
+                            </div>
+                            <p className="mt-3 text-2xl font-bold text-[var(--color-text-primary)]">
+                                {unwatchedVideos.length}
+                            </p>
+                            <p className="text-sm text-[var(--color-text-secondary)]">
+                                Unwatched videos
+                            </p>
+                        </Card>
+                    </Link>
+                )}
             </div>
 
             {/* ─── Content Grid ────────────────────────────── */}
-            <div className="grid gap-6 lg:grid-cols-2">
-                {/* Recent Notes */}
-                <section>
-                    <div className="mb-3 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
-                            📝 Recent Notes
-                        </h2>
-                        <Link
-                            href="/notes"
-                            className="text-xs text-[var(--color-brand)] hover:underline"
-                        >
-                            View all →
-                        </Link>
-                    </div>
-                    <Card>
-                        {recentNotes.length > 0 ? (
-                            <ul className="divide-y divide-[var(--color-border)]">
-                                {recentNotes.map((note) => (
-                                    <li key={note.id}>
-                                        <Link
-                                            href={`/notes/${note.id}`}
-                                            className="flex items-center gap-3 py-2.5 hover:bg-[var(--color-surface-2)] -mx-4 px-4 transition-colors rounded"
-                                        >
-                                            {note.pinned && <span className="text-xs">📌</span>}
-                                            <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
-                                                {note.title || "Untitled"}
-                                            </span>
-                                            <span className="text-xs text-[var(--color-text-muted)]">
-                                                {new Date(
-                                                    note.updated_at ?? note.created_at ?? ""
-                                                ).toLocaleDateString("es-AR", {
-                                                    day: "numeric",
-                                                    month: "short",
-                                                })}
-                                            </span>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="py-4 text-center text-sm text-[var(--color-text-muted)]">
-                                No notes yet
-                            </p>
-                        )}
-                    </Card>
-                </section>
+            {/* Only render grid if at least one section is visible */}
+            {(sections.recent_notes || sections.upcoming_events) && (
+                <div className="grid gap-6 lg:grid-cols-2">
+                    {/* Recent Notes */}
+                    {sections.recent_notes && (
+                        <section>
+                            <div className="mb-3 flex items-center justify-between">
+                                <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
+                                    📝 Recent Notes
+                                </h2>
+                                <Link
+                                    href="/notes"
+                                    className="text-xs text-[var(--color-brand)] hover:underline"
+                                >
+                                    View all →
+                                </Link>
+                            </div>
+                            <Card>
+                                {recentNotes.length > 0 ? (
+                                    <ul className="divide-y divide-[var(--color-border)]">
+                                        {recentNotes.map((note) => (
+                                            <li key={note.id}>
+                                                <Link
+                                                    href={`/notes/${note.id}`}
+                                                    className="flex items-center gap-3 py-2.5 hover:bg-[var(--color-surface-2)] -mx-4 px-4 transition-colors rounded"
+                                                >
+                                                    {note.pinned && <span className="text-xs">📌</span>}
+                                                    <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
+                                                        {note.title || "Untitled"}
+                                                    </span>
+                                                    <span className="text-xs text-[var(--color-text-muted)]">
+                                                        {new Date(
+                                                            note.updated_at ?? note.created_at ?? ""
+                                                        ).toLocaleDateString("es-AR", {
+                                                            day: "numeric",
+                                                            month: "short",
+                                                        })}
+                                                    </span>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="py-4 text-center text-sm text-[var(--color-text-muted)]">
+                                        No notes yet
+                                    </p>
+                                )}
+                            </Card>
+                        </section>
+                    )}
 
-                {/* Upcoming Events */}
-                <section>
-                    <div className="mb-3 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
-                            📅 Upcoming Events
-                        </h2>
-                        <Link
-                            href="/calendar"
-                            className="text-xs text-[var(--color-brand)] hover:underline"
-                        >
-                            View all →
-                        </Link>
-                    </div>
-                    <Card>
-                        {todayEvents.length + upcomingEvents.length > 0 ? (
-                            <ul className="divide-y divide-[var(--color-border)]">
-                                {todayEvents.map((event) => (
-                                    <li
-                                        key={event.id}
-                                        className="flex items-center gap-3 py-2.5"
-                                    >
-                                        <div
-                                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                                            style={{
-                                                backgroundColor:
-                                                    event.color ?? "var(--color-brand)",
-                                            }}
-                                        />
-                                        <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
-                                            {event.title}
-                                        </span>
-                                        <Badge variant="success">Today</Badge>
-                                    </li>
-                                ))}
-                                {upcomingEvents.map((event) => (
-                                    <li
-                                        key={event.id}
-                                        className="flex items-center gap-3 py-2.5"
-                                    >
-                                        <div
-                                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                                            style={{
-                                                backgroundColor:
-                                                    event.color ?? "var(--color-brand)",
-                                            }}
-                                        />
-                                        <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
-                                            {event.title}
-                                        </span>
-                                        <span className="text-xs text-[var(--color-text-muted)]">
-                                            {new Date(event.start_time).toLocaleDateString(
-                                                "es-AR",
-                                                { day: "numeric", month: "short" }
-                                            )}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="py-4 text-center text-sm text-[var(--color-text-muted)]">
-                                No upcoming events
-                            </p>
-                        )}
-                    </Card>
-                </section>
-            </div>
+                    {/* Upcoming Events */}
+                    {sections.upcoming_events && (
+                        <section>
+                            <div className="mb-3 flex items-center justify-between">
+                                <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
+                                    📅 Upcoming Events
+                                </h2>
+                                <Link
+                                    href="/calendar"
+                                    className="text-xs text-[var(--color-brand)] hover:underline"
+                                >
+                                    View all →
+                                </Link>
+                            </div>
+                            <Card>
+                                {todayEvents.length + upcomingEvents.length > 0 ? (
+                                    <ul className="divide-y divide-[var(--color-border)]">
+                                        {todayEvents.map((event) => (
+                                            <li
+                                                key={event.id}
+                                                className="flex items-center gap-3 py-2.5"
+                                            >
+                                                <div
+                                                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            event.color ?? "var(--color-brand)",
+                                                    }}
+                                                />
+                                                <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
+                                                    {event.title}
+                                                </span>
+                                                <Badge variant="success">Today</Badge>
+                                            </li>
+                                        ))}
+                                        {upcomingEvents.map((event) => (
+                                            <li
+                                                key={event.id}
+                                                className="flex items-center gap-3 py-2.5"
+                                            >
+                                                <div
+                                                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            event.color ?? "var(--color-brand)",
+                                                    }}
+                                                />
+                                                <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate">
+                                                    {event.title}
+                                                </span>
+                                                <span className="text-xs text-[var(--color-text-muted)]">
+                                                    {new Date(event.start_time).toLocaleDateString(
+                                                        "es-AR",
+                                                        { day: "numeric", month: "short" }
+                                                    )}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="py-4 text-center text-sm text-[var(--color-text-muted)]">
+                                        No upcoming events
+                                    </p>
+                                )}
+                            </Card>
+                        </section>
+                    )}
+                </div>
+            )}
 
             {/* ─── Recent Transactions ─────────────────────── */}
-            <section>
-                <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
-                        💰 Recent Transactions
-                    </h2>
-                    <Link
-                        href="/finances"
-                        className="text-xs text-[var(--color-brand)] hover:underline"
-                    >
-                        View all →
-                    </Link>
-                </div>
-                <Card>
-                    {transactions.length > 0 ? (
-                        <ul className="divide-y divide-[var(--color-border)]">
-                            {transactions.map((tx) => (
-                                <li
-                                    key={tx.id}
-                                    className="flex items-center justify-between py-2.5"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-sm">
-                                            {tx.type === "income" ? "📈" : "📉"}
-                                        </span>
-                                        <span className="text-sm text-[var(--color-text-primary)] truncate max-w-[200px]">
-                                            {tx.description || "Transaction"}
-                                        </span>
-                                    </div>
-                                    <span
-                                        className={`text-sm font-medium ${tx.type === "income"
-                                                ? "text-emerald-400"
-                                                : "text-red-400"
-                                            }`}
+            {sections.recent_transactions && (
+                <section>
+                    <div className="mb-3 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
+                            💰 Recent Transactions
+                        </h2>
+                        <Link
+                            href="/finances"
+                            className="text-xs text-[var(--color-brand)] hover:underline"
+                        >
+                            View all →
+                        </Link>
+                    </div>
+                    <Card>
+                        {transactions.length > 0 ? (
+                            <ul className="divide-y divide-[var(--color-border)]">
+                                {transactions.map((tx) => (
+                                    <li
+                                        key={tx.id}
+                                        className="flex items-center justify-between py-2.5"
                                     >
-                                        {tx.type === "income" ? "+" : "-"}$
-                                        {Number(tx.amount).toLocaleString()}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="py-4 text-center text-sm text-[var(--color-text-muted)]">
-                            No transactions yet
-                        </p>
-                    )}
-                </Card>
-            </section>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm">
+                                                {tx.type === "income" ? "📈" : "📉"}
+                                            </span>
+                                            <span className="text-sm text-[var(--color-text-primary)] truncate max-w-[200px]">
+                                                {tx.description || "Transaction"}
+                                            </span>
+                                        </div>
+                                        <span
+                                            className={`text-sm font-medium ${tx.type === "income"
+                                                    ? "text-emerald-400"
+                                                    : "text-red-400"
+                                                }`}
+                                        >
+                                            {tx.type === "income" ? "+" : "-"}$
+                                            {Number(tx.amount).toLocaleString()}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="py-4 text-center text-sm text-[var(--color-text-muted)]">
+                                No transactions yet
+                            </p>
+                        )}
+                    </Card>
+                </section>
+            )}
 
             {/* ─── Footer ──────────────────────────────────── */}
             <footer className="border-t border-[var(--color-border)] pt-6 pb-4">

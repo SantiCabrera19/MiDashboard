@@ -1,4 +1,4 @@
-// ─── Middleware ──────────────────────────────────────────
+// ─── Proxy (Next.js 16 Middleware) ───────────────────────
 // Runs BEFORE every request to protected routes.
 //
 // PURPOSE:

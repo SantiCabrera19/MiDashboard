@@ -5,6 +5,7 @@
 // Hover reveals pin/watch/open actions.
 
 import { useTransition } from "react";
+import Image from "next/image";
 import { Badge } from "@/components/ui";
 import { toggleWatched, togglePinned } from "@/lib/actions/videos";
 import type { VideoWithChannel } from "@/lib/data/videos";
@@ -43,10 +44,12 @@ export default function VideoCard({ video }: VideoCardProps) {
                 className="relative block aspect-video bg-[var(--color-surface-3)] overflow-hidden"
             >
                 {video.thumbnail ? (
-                    <img
+                    <Image
                         src={video.thumbnail}
                         alt={video.title}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">

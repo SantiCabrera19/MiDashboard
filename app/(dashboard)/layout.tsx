@@ -18,24 +18,29 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import { ToastProvider } from "@/components/ui";
 import { getUser } from "@/lib/actions/auth";
+import { getUserProfile } from "@/lib/data/settings";
 
 export default async function DashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    // Fetch user on the server — middleware guarantees a valid session
-    const user = await getUser();
+    // Fetch user + profile in parallel — middleware guarantees a valid session
+    const [user, profile] = await Promise.all([getUser(), getUserProfile()]);
 
     // Extract user info for the Sidebar
+    // Priority: profile display_name → Google full_name → email prefix → "User"
     const sidebarUser = user
         ? {
             name:
+                profile?.display_name ??
                 user.user_metadata?.full_name ??
                 user.email?.split("@")[0] ??
                 "User",
             email: user.email ?? "",
-            avatar: user.user_metadata?.avatar_url,
+            avatar:
+                profile?.avatar_url ??
+                user.user_metadata?.avatar_url,
         }
         : null;
 

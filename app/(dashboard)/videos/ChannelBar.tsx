@@ -6,6 +6,7 @@
 // Also includes the "Follow Channel" button.
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { Button, useToast } from "@/components/ui";
 import {
     unfollowChannel,
@@ -75,11 +76,15 @@ export default function ChannelBar({
                                 }`}
                         >
                             {ch.channel_thumbnail && (
-                                <img
-                                    src={ch.channel_thumbnail}
-                                    alt=""
-                                    className="h-5 w-5 rounded-full"
-                                />
+                                <div className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full">
+                                    <Image
+                                        src={ch.channel_thumbnail}
+                                        alt=""
+                                        fill
+                                        className="object-cover"
+                                        sizes="20px"
+                                    />
+                                </div>
                             )}
                             <span className="max-w-[120px] truncate">{ch.channel_name}</span>
                             {syncingId === ch.id && (

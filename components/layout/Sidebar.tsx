@@ -10,7 +10,7 @@
 // - Mobile toggle state
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
 import NavItem from "./NavItem";
 import SignOutButton from "./SignOutButton";
 
@@ -99,12 +99,16 @@ export default function Sidebar({ user }: SidebarProps) {
                     {user ? (
                         <div className="flex items-center gap-3">
                             {user.avatar ? (
-                                <img
-                                    src={user.avatar}
-                                    alt={user.name}
-                                    className="h-8 w-8 rounded-full object-cover"
-                                    referrerPolicy="no-referrer"
-                                />
+                                <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full">
+                                    <Image
+                                        src={user.avatar}
+                                        alt={user.name}
+                                        fill
+                                        className="object-cover"
+                                        referrerPolicy="no-referrer"
+                                        sizes="32px"
+                                    />
+                                </div>
                             ) : (
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-brand)] text-xs font-bold text-white">
                                     {user.name.charAt(0).toUpperCase()}
