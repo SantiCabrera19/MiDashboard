@@ -183,6 +183,57 @@ export default async function HomePage() {
                 )}
             </div>
 
+            {/* ─── Mobile Quick Access Grid (2×2) — hidden on desktop ─── */}
+            <div className="grid grid-cols-2 gap-3 lg:hidden">
+                <Link href="/notes">
+                    <Card interactive className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                        <span className="text-3xl">📝</span>
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">Notes</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">{notes.length} total</p>
+                    </Card>
+                </Link>
+                <Link href="/finances">
+                    <Card interactive className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                        <span className="text-3xl">💰</span>
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">Finances</p>
+                        <p className={`text-xs font-medium ${monthBalance >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {monthBalance >= 0 ? "+" : ""}{monthBalance === 0 ? "$0" : `$${Math.abs(monthBalance).toLocaleString()}`}
+                        </p>
+                    </Card>
+                </Link>
+                <Link href="/calendar">
+                    <Card interactive className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                        <span className="text-3xl">📅</span>
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">Calendar</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
+                            {todayEvents.length > 0 ? `${todayEvents.length} today` : `${events.length} events`}
+                        </p>
+                    </Card>
+                </Link>
+                <Link href="/videos">
+                    <Card interactive className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                        <span className="text-3xl">🎬</span>
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">Videos</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">{unwatchedVideos.length} unwatched</p>
+                    </Card>
+                </Link>
+            </div>
+
+            {/* ─── Mobile activity feed placeholder — future carousel ─── */}
+            <div className="lg:hidden">
+                <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-1)] p-6 flex flex-col items-center justify-center gap-2 min-h-[120px]">
+                    <span className="text-2xl opacity-40">✨</span>
+                    <p className="text-sm font-medium text-[var(--color-text-muted)]">
+                        Activity feed — coming soon
+                    </p>
+                    <p className="text-xs text-[var(--color-text-muted)] text-center opacity-70">
+                        Recent notes, transactions, and events in one swipeable view
+                    </p>
+                </div>
+            </div>
+
+            {/* ─── Desktop content sections — hidden on mobile ─────── */}
+            <div className="hidden lg:contents">
             {/* ─── Content Grid ────────────────────────────── */}
             {/* Only render grid if at least one section is visible */}
             {(sections.recent_notes || sections.upcoming_events) && (
@@ -355,6 +406,7 @@ export default async function HomePage() {
                     </Card>
                 </section>
             )}
+            </div>
 
             {/* ─── Footer ──────────────────────────────────── */}
             <footer className="border-t border-[var(--color-border)] pt-6 pb-4">

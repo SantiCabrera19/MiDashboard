@@ -96,7 +96,7 @@ export default function EventCard({ event }: EventCardProps) {
                 </div>
 
                 {/* Actions — appear on hover */}
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
                     <button
                         onClick={() => setShowEdit(true)}
                         className="rounded-md p-1.5 text-xs hover:bg-[var(--color-surface-3)] transition-colors"

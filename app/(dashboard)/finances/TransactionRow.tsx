@@ -40,39 +40,35 @@ export default function TransactionRow({ transaction: t, categories }: Transacti
     return (
         <>
             <div
-                className={`group flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-[var(--color-surface-2)] ${isPending ? "opacity-50" : ""
+                className={`group rounded-lg p-3 transition-colors hover:bg-[var(--color-surface-2)] ${isPending ? "opacity-50" : ""
                     }`}
             >
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                {/* Top row: description + amount */}
+                <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] truncate flex-1">
                         {t.description ?? "No description"}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant={t.type === "income" ? "success" : "default"}>
-                            {t.type}
-                        </Badge>
-                        {t.payment_method && (
-                            <Badge variant="info">{t.payment_method}</Badge>
-                        )}
-                        <span className="text-xs text-[var(--color-text-muted)]">
-                            {new Date(t.transaction_date).toLocaleDateString()}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Amount + actions */}
-                <div className="flex items-center gap-3">
                     <span
-                        className={`text-sm font-semibold ${t.type === "income"
+                        className={`text-sm font-semibold shrink-0 ${t.type === "income"
                             ? "text-[var(--color-success)]"
                             : "text-[var(--color-text-primary)]"
                             }`}
                     >
                         {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount)}
                     </span>
-
-                    {/* Action buttons — appear on hover */}
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                </div>
+                {/* Bottom row: badges + date + action buttons */}
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <Badge variant={t.type === "income" ? "success" : "default"}>
+                        {t.type}
+                    </Badge>
+                    {t.payment_method && (
+                        <Badge variant="info">{t.payment_method}</Badge>
+                    )}
+                    <span className="text-xs text-[var(--color-text-muted)]">
+                        {new Date(t.transaction_date).toLocaleDateString()}
+                    </span>
+                    <div className="ml-auto flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={() => setShowEdit(true)}
                             className="rounded-md p-1.5 text-xs hover:bg-[var(--color-surface-3)] transition-colors"
