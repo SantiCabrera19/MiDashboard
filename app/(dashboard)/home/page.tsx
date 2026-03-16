@@ -100,7 +100,7 @@ export default async function HomePage() {
             </div>
 
             {/* ─── Stat Cards ──────────────────────────────── */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="hidden lg:grid gap-4 lg:grid-cols-4">
                 {/* Notes */}
                 {statCards.notes && (
                     <Link href="/notes">
