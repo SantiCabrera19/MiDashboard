@@ -70,7 +70,7 @@ export default function EventCard({ event }: EventCardProps) {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-[var(--color-text-primary)] truncate">
+                    <h3 className="font-semibold text-[var(--color-text-primary)] line-clamp-2 sm:truncate">
                         {event.title}
                     </h3>
                     {event.description && (

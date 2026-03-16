@@ -51,12 +51,12 @@ export default async function DashboardLayout({
                 <Sidebar user={sidebarUser} />
 
                 {/* Main content area — full-width on mobile, offset on desktop */}
-                <div className="flex flex-1 flex-col lg:ml-[var(--sidebar-width)]">
+                <div className="flex flex-1 flex-col lg:ml-[var(--sidebar-width)] min-w-0">
                     {/* Navbar — sticky at top, persists across pages */}
                     <Navbar />
 
                     {/* Page content — THIS is what changes on navigation */}
-                    <main className="flex-1 p-4 lg:p-6">{children}</main>
+                    <main className="flex-1 p-4 lg:p-6 min-w-0">{children}</main>
                 </div>
             </div>
         </ToastProvider>

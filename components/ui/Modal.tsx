@@ -80,7 +80,7 @@ export default function Modal({
                 aria-modal="true"
                 aria-labelledby="modal-title"
                 className={`
-          relative ${maxWidth} w-full
+          relative ${maxWidth} w-full max-h-[90vh] overflow-y-auto
           rounded-2xl border border-[var(--color-border)]
           bg-[var(--color-surface-1)]
           shadow-2xl shadow-black/30

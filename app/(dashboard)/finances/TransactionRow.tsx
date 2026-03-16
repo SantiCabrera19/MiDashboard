@@ -44,7 +44,7 @@ export default function TransactionRow({ transaction: t, categories }: Transacti
                     }`}
             >
                 {/* Top row: description + amount */}
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 min-w-0">
                     <p className="text-sm font-medium text-[var(--color-text-primary)] truncate flex-1">
                         {t.description ?? "No description"}
                     </p>

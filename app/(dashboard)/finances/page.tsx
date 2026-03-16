@@ -36,7 +36,7 @@ export default async function FinancesPage() {
     return (
         <div>
             {/* Page header */}
-            <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
                         💰 Finances
@@ -55,7 +55,7 @@ export default async function FinancesPage() {
                         <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
                             Net Balance
                         </p>
-                        <p className="mt-2 text-2xl font-bold text-[var(--color-info)]">
+                        <p className="mt-2 text-xl sm:text-2xl font-bold text-[var(--color-info)]">
                             {formatCurrency(currentMonth.net_balance ?? 0)}
                         </p>
                     </Card>
@@ -63,7 +63,7 @@ export default async function FinancesPage() {
                         <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
                             Income
                         </p>
-                        <p className="mt-2 text-2xl font-bold text-[var(--color-success)]">
+                        <p className="mt-2 text-xl sm:text-2xl font-bold text-[var(--color-success)]">
                             {formatCurrency(currentMonth.total_income ?? 0)}
                         </p>
                     </Card>
@@ -71,7 +71,7 @@ export default async function FinancesPage() {
                         <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
                             Expenses
                         </p>
-                        <p className="mt-2 text-2xl font-bold text-[var(--color-error)]">
+                        <p className="mt-2 text-xl sm:text-2xl font-bold text-[var(--color-error)]">
                             {formatCurrency(currentMonth.total_expenses ?? 0)}
                         </p>
                     </Card>
@@ -104,3 +104,4 @@ export default async function FinancesPage() {
         </div>
     );
 }
+  
