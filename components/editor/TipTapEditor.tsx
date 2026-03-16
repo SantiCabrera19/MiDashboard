@@ -66,6 +66,35 @@ export default function TipTapEditor({
     const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
     const charCount = text.length;
 
+    // ─── Cursor-scoped heading toggle ───────────────────
+    // WHY: TipTap's toggleHeading is a block-level command.
+    // Without an explicit selection anchor, it can affect the
+    // entire document when the cursor has no text selected.
+    // This helper resolves the cursor's parent node boundaries
+    // and explicitly selects that paragraph before toggling.
+    function toggleHeadingAtCursor(level: 1 | 2 | 3) {
+        if (!editor) return;
+        const { from, to } = editor.state.selection;
+
+        if (from === to) {
+            // Cursor only — anchor to current paragraph boundaries
+            const resolvedPos = editor.state.doc.resolve(from);
+            const nodeStart = resolvedPos.start();
+            const nodeEnd = resolvedPos.end();
+
+            editor
+                .chain()
+                .focus()
+                .setTextSelection({ from: nodeStart, to: nodeEnd })
+                .toggleHeading({ level })
+                .setTextSelection(from) // restore cursor to original position
+                .run();
+        } else {
+            // Text is selected — apply to selection normally
+            editor.chain().focus().toggleHeading({ level }).run();
+        }
+    }
+
     return (
         <div className="border border-[var(--color-border)] rounded-md focus-within:ring-2 ring-[var(--color-brand-primary)] overflow-hidden bg-[var(--color-surface-1)]">
             {/* Toolbar — sticky at top */}
@@ -100,21 +129,21 @@ export default function TipTapEditor({
 
                 {/* Headings */}
                 <ToolbarButton
-                    onAction={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                    onAction={() => toggleHeadingAtCursor(1)}
                     active={editor.isActive("heading", { level: 1 })}
                     title="Heading 1 — applies to current paragraph"
                 >
                     H1
                 </ToolbarButton>
                 <ToolbarButton
-                    onAction={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                    onAction={() => toggleHeadingAtCursor(2)}
                     active={editor.isActive("heading", { level: 2 })}
                     title="Heading 2 — applies to current paragraph"
                 >
                     H2
                 </ToolbarButton>
                 <ToolbarButton
-                    onAction={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                    onAction={() => toggleHeadingAtCursor(3)}
                     active={editor.isActive("heading", { level: 3 })}
                     title="Heading 3 — applies to current paragraph"
                 >
