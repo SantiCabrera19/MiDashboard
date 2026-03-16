@@ -20,7 +20,7 @@ export default function Navbar() {
         border-b border-[var(--color-border)]
         bg-[var(--color-surface-0)]/80
         backdrop-blur-md
-        px-6
+        pl-16 pr-4 lg:px-6
       "
             style={{ height: "var(--navbar-height)" }}
         >

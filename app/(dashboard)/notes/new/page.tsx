@@ -96,6 +96,24 @@ export default function NewNotePage() {
                     <TipTapEditor onChange={setContent} />
                 </div>
             </div>
+
+            {/* Sticky bottom bar — mobile only (desktop uses top header buttons) */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 flex gap-3 border-t border-[var(--color-border)] bg-[var(--color-surface-1)]/95 backdrop-blur-sm px-4 py-3 lg:hidden">
+                <Link href="/notes" className="flex-1">
+                    <Button variant="ghost" className="w-full">Cancel</Button>
+                </Link>
+                <Button
+                    variant="primary"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="flex-1"
+                >
+                    {isSaving ? "Saving..." : "Save Note"}
+                </Button>
+            </div>
+
+            {/* Bottom padding so content isn't hidden behind sticky bar — mobile only */}
+            <div className="h-20 lg:hidden" />
         </div>
     );
 }
