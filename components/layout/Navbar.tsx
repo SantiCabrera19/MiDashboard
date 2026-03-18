@@ -1,7 +1,7 @@
 // ─── Navbar ─────────────────────────────────────────────
-// Server Component (no "use client") — this is purely static UI.
-// It renders a top bar with a placeholder for breadcrumbs
-// and user actions. No interactivity needed = no JS sent to browser.
+// Server Component — async to fetch notification count.
+// It renders a top bar with notification bell (with live badge)
+// and settings link.
 //
 // ARCHITECTURE NOTE:
 // The Navbar lives inside (dashboard)/layout.tsx alongside the
@@ -10,8 +10,12 @@
 // via metadata, not here — this is just the visual bar.
 
 import Link from "next/link";
+import { getNotifications } from "@/lib/data/notifications";
 
-export default function Navbar() {
+export default async function Navbar() {
+    const notifications = await getNotifications();
+    const count = notifications.length;
+
     return (
         <header
             className="
@@ -29,19 +33,32 @@ export default function Navbar() {
 
             {/* Right side — actions */}
             <div className="flex items-center gap-2">
+                {/* Notification bell with badge */}
                 <Link
                     href="/notifications"
                     className="
-            rounded-lg p-2
+            relative rounded-lg p-2
             text-[var(--color-text-secondary)]
             transition-colors
             hover:bg-[var(--color-surface-2)]
             hover:text-[var(--color-text-primary)]
           "
-                    aria-label="Notifications"
+                    aria-label={`Notifications${count > 0 ? ` (${count})` : ""}`}
                 >
                     🔔
+                    {count > 0 && (
+                        <span className="
+              absolute top-1 right-1
+              flex h-4 w-4 items-center justify-center
+              rounded-full bg-[var(--color-error)]
+              text-[10px] font-bold text-white
+              leading-none
+            ">
+                            {count > 9 ? "9+" : count}
+                        </span>
+                    )}
                 </Link>
+
                 <Link
                     href="/settings"
                     className="
