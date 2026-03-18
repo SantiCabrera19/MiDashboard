@@ -17,6 +17,7 @@ export type NotificationItem = {
     icon: string;
     href: string;
     timestamp: string; // ISO string for sorting
+    isRead: boolean; // true if already seen
 };
 
 export async function getNotifications(): Promise<NotificationItem[]> {
@@ -62,6 +63,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
                     icon: "🎬",
                     href: "/videos",
                     timestamp: latest.published_at,
+                    isRead: false,
                 });
             }
         }
@@ -92,6 +94,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
                 icon: "📅",
                 href: "/calendar",
                 timestamp: event.start_time,
+                isRead: false,
             });
         }
     }
@@ -118,6 +121,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
                 icon: "💳",
                 href: "/finances",
                 timestamp: `${debt.next_due_date}T00:00:00.000Z`,
+                isRead: false,
             });
         }
     }
