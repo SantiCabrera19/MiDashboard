@@ -11,8 +11,11 @@
 import type { Metadata } from "next";
 import { Card, EmptyState } from "@/components/ui";
 import { getTransactions, getCategories, getMonthlySummary } from "@/lib/data/transactions";
+import { getDebts } from "@/lib/data/debts";
 import TransactionRow from "./TransactionRow";
 import NewTransactionButton from "./NewTransactionButton";
+import DebtCard from "./DebtCard";
+import NewDebtButton from "./NewDebtButton";
 
 export const metadata: Metadata = {
     title: "Finances",
@@ -25,10 +28,11 @@ function formatCurrency(amount: number): string {
 
 export default async function FinancesPage() {
     // Parallel fetch — all three run simultaneously
-    const [transactions, categories, monthlySummary] = await Promise.all([
+    const [transactions, categories, monthlySummary, debts] = await Promise.all([
         getTransactions(),
         getCategories(),
         getMonthlySummary(),
+        getDebts(),
     ]);
 
     const currentMonth = monthlySummary[0];
@@ -101,6 +105,30 @@ export default async function FinancesPage() {
                     description="Record your first transaction to start tracking finances."
                 />
             )}
+
+            {/* ─── Debts & Installments ─── */}
+            <section>
+                <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">
+                        💳 Debts & Installments
+                    </h2>
+                    <NewDebtButton />
+                </div>
+                {debts.length > 0 ? (
+                    <div className="space-y-3">
+                        {debts.map((debt) => (
+                            <DebtCard key={debt.id} debt={debt} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="rounded-xl border border-dashed border-[var(--color-border)] p-8 text-center">
+                        <p className="text-sm text-[var(--color-text-muted)]">No active debts</p>
+                        <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                            Track loans, installments, and credit card debt
+                        </p>
+                    </div>
+                )}
+            </section>
         </div>
     );
 }
