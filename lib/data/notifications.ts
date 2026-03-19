@@ -7,6 +7,7 @@
 // 2. calendar_events (start_time within next 48 hours)
 // 3. debts (status = active, next_due_date within 7 days)
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type NotificationItem = {
@@ -20,7 +21,7 @@ export type NotificationItem = {
     isRead: boolean; // true if already seen
 };
 
-export async function getNotifications(): Promise<NotificationItem[]> {
+export const getNotifications = cache(async function getNotifications(): Promise<NotificationItem[]> {
     const supabase = await createClient();
     const notifications: NotificationItem[] = [];
 
@@ -132,4 +133,4 @@ export async function getNotifications(): Promise<NotificationItem[]> {
     );
 
     return notifications;
-}
+});
