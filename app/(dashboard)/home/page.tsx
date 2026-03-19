@@ -16,6 +16,7 @@ import { getTransactions, getMonthlySummary } from "@/lib/data/transactions";
 import { getCalendarEvents } from "@/lib/data/calendar";
 import { getLatestVideos, getChannels } from "@/lib/data/videos";
 import { getUserPreferences, getUserProfile } from "@/lib/data/settings";
+import ActivityCarousel from "./ActivityCarousel";
 
 export const metadata: Metadata = {
     title: "Home — MeDashboard",
@@ -219,18 +220,12 @@ export default async function HomePage() {
                 </Link>
             </div>
 
-            {/* ─── Mobile activity feed placeholder — future carousel ─── */}
-            <div className="lg:hidden">
-                <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-1)] p-6 flex flex-col items-center justify-center gap-2 min-h-[120px]">
-                    <span className="text-2xl opacity-40">✨</span>
-                    <p className="text-sm font-medium text-[var(--color-text-muted)]">
-                        Activity feed — coming soon
-                    </p>
-                    <p className="text-xs text-[var(--color-text-muted)] text-center opacity-70">
-                        Recent notes, transactions, and events in one swipeable view
-                    </p>
-                </div>
-            </div>
+            {/* ─── Mobile Activity Carousel ─── */}
+            <ActivityCarousel
+                notes={notes}
+                transactions={transactions}
+                events={events}
+            />
 
             {/* ─── Desktop content sections — hidden on mobile ─────── */}
             <div className="hidden lg:contents">
