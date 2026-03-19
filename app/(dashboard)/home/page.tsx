@@ -417,6 +417,14 @@ export default async function HomePage() {
                             Santiago Emanuel Cabrera
                         </a>
                     </p>
+                    {/* Easter egg — Minesweeper */}
+                    <Link
+                        href="/games/minesweeper"
+                        className="text-[var(--color-text-muted)] opacity-30 hover:opacity-100 transition-opacity text-lg"
+                        title="💣"
+                    >
+                        💣
+                    </Link>
                     <a
                         href="https://github.com/SantiCabrera19"
                         target="_blank"
