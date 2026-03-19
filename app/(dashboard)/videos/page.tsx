@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default async function VideosPage() {
     // Parallel fetch
     const [videos, channels] = await Promise.all([
-        getLatestVideos(100), // Fetch up to 100 videos, client paginates
+        getLatestVideos(50), // Fetch up to 50 recent videos, client paginates
         getChannels(),
     ]);
 
@@ -31,8 +31,7 @@ export default async function VideosPage() {
                     🎬 Videos
                 </h1>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                    {videos.length} video{videos.length !== 1 ? "s" : ""} from{" "}
-                    {channels.length} channel{channels.length !== 1 ? "s" : ""}
+                    {channels.length} channel{channels.length !== 1 ? "s" : ""} · {videos.length} recent videos
                 </p>
             </div>
 
