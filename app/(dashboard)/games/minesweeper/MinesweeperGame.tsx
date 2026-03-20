@@ -171,12 +171,12 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
     const [showHighscores, setShowHighscores] = useState(false);
     const [savingScore, setSavingScore] = useState(false);
     const [isFirstClick, setIsFirstClick] = useState(true);
-    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const boardContainerRef = useRef<HTMLDivElement>(null);
     const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const longPressCell = useRef<{ row: number; col: number } | null>(null);
+    const touchMovedRef = useRef(false);
     const config = DIFFICULTY_CONFIG[difficulty];
 
     // ─── Timer ────────────────────────────────────────────
@@ -216,22 +216,19 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameStatus]);
 
-    // ─── Auto-fit zoom when difficulty changes ─────────────
+    // ─── Auto-fit zoom: comfortable cell size ─────────────
     useEffect(() => {
-        if (!boardContainerRef.current) return;
-        const containerWidth = boardContainerRef.current.clientWidth - 24;
-        const containerHeight = window.innerHeight * 0.55;
-        const maxCellW = Math.floor(containerWidth / config.cols);
-        const maxCellH = Math.floor(containerHeight / config.rows);
-        const optimalCell = Math.min(maxCellW, maxCellH, 32);
-        const optimalZoom = Math.max(0.4, optimalCell / 32);
-        setZoom(+optimalZoom.toFixed(1));
-    }, [difficulty, config.cols, config.rows]);
-
-    // ─── Fullscreen toggle ────────────────────────────────
-    const toggleFullscreen = useCallback(() => {
-        setIsFullscreen(prev => !prev);
-    }, []);
+        const targetCellSize = window.innerWidth < 640 ? 28 : 32;
+        if (difficulty === "easy") {
+            if (!boardContainerRef.current) return;
+            const containerWidth = boardContainerRef.current.clientWidth - 24;
+            const maxCellW = Math.floor(containerWidth / config.cols);
+            const optimalCell = Math.min(maxCellW, targetCellSize);
+            setZoom(+(optimalCell / 32).toFixed(1));
+        } else {
+            setZoom(+(targetCellSize / 32).toFixed(1));
+        }
+    }, [difficulty, config.cols]);
 
     // ─── Reset game ───────────────────────────────────────
     const resetGame = useCallback((diff?: Difficulty) => {
@@ -308,9 +305,14 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
 
     // ─── Long-press to flag on mobile ─────────────────────
     const handleTouchStart = useCallback((row: number, col: number) => {
+        touchMovedRef.current = false;
         longPressCell.current = { row, col };
         longPressRef.current = setTimeout(() => {
-            if (longPressCell.current?.row === row && longPressCell.current?.col === col) {
+            if (
+                !touchMovedRef.current &&
+                longPressCell.current?.row === row &&
+                longPressCell.current?.col === col
+            ) {
                 const cell = board[row][col];
                 if (cell.isRevealed || gameStatus === "lost" || gameStatus === "won") return;
                 const newBoard = board.map(r => r.map(c => {
@@ -322,12 +324,16 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                 setBoard(newBoard);
                 setMinesLeft(prev => cell.isFlagged ? prev + 1 : prev - 1);
             }
-        }, 400);
+        }, 450);
     }, [board, gameStatus]);
+
+    const handleTouchMove = useCallback(() => {
+        touchMovedRef.current = true;
+        if (longPressRef.current) clearTimeout(longPressRef.current);
+    }, []);
 
     const handleTouchEnd = useCallback(() => {
         if (longPressRef.current) clearTimeout(longPressRef.current);
-        longPressCell.current = null;
     }, []);
 
     // ─── Cell size based on zoom ───────────────────────────
@@ -335,11 +341,8 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
 
     // ─── Render ───────────────────────────────────────────
     return (
-        <div className={isFullscreen
-            ? "fixed inset-0 z-50 bg-[var(--color-surface-0)] flex flex-col p-3 gap-3"
-            : "space-y-3"
-        }>
-            {/* ── Row 1: difficulty + smiley + fullscreen ── */}
+        <div className="space-y-3">
+            {/* ── Row 1: difficulty + smiley + stats ── */}
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex rounded-lg overflow-hidden border border-[var(--color-border)]">
                     {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
@@ -363,14 +366,6 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                     title="New game"
                 >
                     {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
-                </button>
-
-                <button
-                    onClick={toggleFullscreen}
-                    className="px-3 py-1.5 text-sm rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-colors text-[var(--color-text-secondary)]"
-                    title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-                >
-                    {isFullscreen ? "⊠" : "⊞"}
                 </button>
 
                 {/* Stats */}
@@ -429,13 +424,16 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                 </div>
             )}
 
-            {/* ── Board ── */}
+            {/* ── Board — fixed height pan container ── */}
             <div
                 ref={boardContainerRef}
-                className={`overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-3 ${
-                    isFullscreen ? "flex-1" : ""
-                }`}
-                style={isFullscreen ? undefined : { maxHeight: "60vh" }}
+                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-3"
+                style={{
+                    height: "70vh",
+                    overflow: "auto",
+                    overscrollBehavior: "contain",
+                    WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+                }}
             >
                 <div
                     style={{
@@ -455,6 +453,7 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                                 onClick={() => handleClick(cell.row, cell.col)}
                                 onRightClick={(e) => handleRightClick(e, cell.row, cell.col)}
                                 onTouchStart={() => handleTouchStart(cell.row, cell.col)}
+                                onTouchMove={handleTouchMove}
                                 onTouchEnd={handleTouchEnd}
                             />
                         ))
@@ -505,10 +504,11 @@ interface CellButtonProps {
     onClick: () => void;
     onRightClick: (e: React.MouseEvent) => void;
     onTouchStart: () => void;
+    onTouchMove: () => void;
     onTouchEnd: () => void;
 }
 
-function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStart, onTouchEnd }: CellButtonProps) {
+function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStart, onTouchMove, onTouchEnd }: CellButtonProps) {
     const fontSize = Math.max(10, Math.round(size * 0.45));
 
     // Revealed mine that exploded
@@ -553,7 +553,8 @@ function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStar
                 className="flex items-center justify-center rounded-sm bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-colors select-none"
                 onClick={onClick}
                 onContextMenu={onRightClick}
-                onTouchStart={(e) => { e.preventDefault(); onTouchStart(); }}
+                onTouchStart={() => onTouchStart()}
+                onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
             >
                 🚩
@@ -574,7 +575,8 @@ function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStar
             `}
             onClick={onClick}
             onContextMenu={onRightClick}
-            onTouchStart={(e) => { e.preventDefault(); onTouchStart(); }}
+            onTouchStart={() => onTouchStart()}
+            onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         />
     );
