@@ -171,8 +171,12 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
     const [showHighscores, setShowHighscores] = useState(false);
     const [savingScore, setSavingScore] = useState(false);
     const [isFirstClick, setIsFirstClick] = useState(true);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const boardContainerRef = useRef<HTMLDivElement>(null);
+    const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const longPressCell = useRef<{ row: number; col: number } | null>(null);
     const config = DIFFICULTY_CONFIG[difficulty];
 
     // ─── Timer ────────────────────────────────────────────
@@ -211,6 +215,23 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameStatus]);
+
+    // ─── Auto-fit zoom when difficulty changes ─────────────
+    useEffect(() => {
+        if (!boardContainerRef.current) return;
+        const containerWidth = boardContainerRef.current.clientWidth - 24;
+        const containerHeight = window.innerHeight * 0.55;
+        const maxCellW = Math.floor(containerWidth / config.cols);
+        const maxCellH = Math.floor(containerHeight / config.rows);
+        const optimalCell = Math.min(maxCellW, maxCellH, 32);
+        const optimalZoom = Math.max(0.4, optimalCell / 32);
+        setZoom(+optimalZoom.toFixed(1));
+    }, [difficulty, config.cols, config.rows]);
+
+    // ─── Fullscreen toggle ────────────────────────────────
+    const toggleFullscreen = useCallback(() => {
+        setIsFullscreen(prev => !prev);
+    }, []);
 
     // ─── Reset game ───────────────────────────────────────
     const resetGame = useCallback((diff?: Difficulty) => {
@@ -285,15 +306,41 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
         setMinesLeft(prev => cell.isFlagged ? prev + 1 : prev - 1);
     }, [board, gameStatus]);
 
+    // ─── Long-press to flag on mobile ─────────────────────
+    const handleTouchStart = useCallback((row: number, col: number) => {
+        longPressCell.current = { row, col };
+        longPressRef.current = setTimeout(() => {
+            if (longPressCell.current?.row === row && longPressCell.current?.col === col) {
+                const cell = board[row][col];
+                if (cell.isRevealed || gameStatus === "lost" || gameStatus === "won") return;
+                const newBoard = board.map(r => r.map(c => {
+                    if (c.row === row && c.col === col) {
+                        return { ...c, isFlagged: !c.isFlagged };
+                    }
+                    return c;
+                }));
+                setBoard(newBoard);
+                setMinesLeft(prev => cell.isFlagged ? prev + 1 : prev - 1);
+            }
+        }, 400);
+    }, [board, gameStatus]);
+
+    const handleTouchEnd = useCallback(() => {
+        if (longPressRef.current) clearTimeout(longPressRef.current);
+        longPressCell.current = null;
+    }, []);
+
     // ─── Cell size based on zoom ───────────────────────────
     const cellSize = Math.round(32 * zoom);
 
     // ─── Render ───────────────────────────────────────────
     return (
-        <div className="space-y-4">
-            {/* Controls bar */}
-            <div className="flex flex-wrap items-center gap-3">
-                {/* Difficulty selector */}
+        <div className={isFullscreen
+            ? "fixed inset-0 z-50 bg-[var(--color-surface-0)] flex flex-col p-3 gap-3"
+            : "space-y-3"
+        }>
+            {/* ── Row 1: difficulty + smiley + fullscreen ── */}
+            <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex rounded-lg overflow-hidden border border-[var(--color-border)]">
                     {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
                         <button
@@ -310,17 +357,6 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                     ))}
                 </div>
 
-                {/* Stats */}
-                <div className="flex items-center gap-4 px-4 py-1.5 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-                    <span className="text-sm font-mono text-[var(--color-text-primary)]">
-                        💣 {minesLeft}
-                    </span>
-                    <span className="text-sm font-mono text-[var(--color-text-primary)]">
-                        ⏱️ {formatTime(timer)}
-                    </span>
-                </div>
-
-                {/* Reset button */}
                 <button
                     onClick={() => resetGame()}
                     className="px-3 py-1.5 text-lg rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-colors"
@@ -329,10 +365,30 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                     {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
                 </button>
 
-                {/* Zoom controls */}
-                <div className="flex items-center gap-1 ml-auto">
+                <button
+                    onClick={toggleFullscreen}
+                    className="px-3 py-1.5 text-sm rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-colors text-[var(--color-text-secondary)]"
+                    title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                >
+                    {isFullscreen ? "⊠" : "⊞"}
+                </button>
+
+                {/* Stats */}
+                <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] ml-auto">
+                    <span className="text-sm font-mono text-[var(--color-text-primary)]">
+                        💣 {minesLeft}
+                    </span>
+                    <span className="text-sm font-mono text-[var(--color-text-primary)]">
+                        ⏱️ {formatTime(timer)}
+                    </span>
+                </div>
+            </div>
+
+            {/* ── Row 2: zoom + scores ── */}
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                     <button
-                        onClick={() => setZoom(z => Math.max(0.5, +(z - 0.1).toFixed(1)))}
+                        onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(1)))}
                         className="w-7 h-7 rounded-md bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] text-sm font-bold text-[var(--color-text-secondary)] transition-colors"
                     >
                         −
@@ -348,16 +404,19 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                     </button>
                 </div>
 
-                {/* Highscores toggle */}
+                <span className="text-xs text-[var(--color-text-muted)]">
+                    Hold cell to flag on mobile
+                </span>
+
                 <button
                     onClick={() => setShowHighscores(s => !s)}
-                    className="px-3 py-1.5 text-sm font-medium rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] text-[var(--color-text-secondary)] transition-colors"
+                    className="ml-auto px-3 py-1.5 text-sm font-medium rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] text-[var(--color-text-secondary)] transition-colors"
                 >
                     🏆 Scores
                 </button>
             </div>
 
-            {/* Status message */}
+            {/* ── Status message ── */}
             {(gameStatus === "won" || gameStatus === "lost") && (
                 <div className={`rounded-xl border px-4 py-3 text-sm font-medium text-center ${
                     gameStatus === "won"
@@ -370,8 +429,14 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                 </div>
             )}
 
-            {/* Board */}
-            <div className="overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-3">
+            {/* ── Board ── */}
+            <div
+                ref={boardContainerRef}
+                className={`overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-3 ${
+                    isFullscreen ? "flex-1" : ""
+                }`}
+                style={isFullscreen ? undefined : { maxHeight: "60vh" }}
+            >
                 <div
                     style={{
                         display: "grid",
@@ -389,13 +454,15 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                                 gameStatus={gameStatus}
                                 onClick={() => handleClick(cell.row, cell.col)}
                                 onRightClick={(e) => handleRightClick(e, cell.row, cell.col)}
+                                onTouchStart={() => handleTouchStart(cell.row, cell.col)}
+                                onTouchEnd={handleTouchEnd}
                             />
                         ))
                     )}
                 </div>
             </div>
 
-            {/* Highscores panel */}
+            {/* ── Highscores panel ── */}
             {showHighscores && (
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4">
                     <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
@@ -404,7 +471,7 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                     <div className="grid grid-cols-3 gap-4">
                         {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
                             <div key={d}>
-                                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-2 capitalize">
+                                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-2">
                                     {DIFFICULTY_CONFIG[d].label}
                                 </p>
                                 {highscores[d].length === 0 ? (
@@ -437,9 +504,11 @@ interface CellButtonProps {
     gameStatus: GameStatus;
     onClick: () => void;
     onRightClick: (e: React.MouseEvent) => void;
+    onTouchStart: () => void;
+    onTouchEnd: () => void;
 }
 
-function CellButton({ cell, size, gameStatus, onClick, onRightClick }: CellButtonProps) {
+function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStart, onTouchEnd }: CellButtonProps) {
     const fontSize = Math.max(10, Math.round(size * 0.45));
 
     // Revealed mine that exploded
@@ -484,6 +553,8 @@ function CellButton({ cell, size, gameStatus, onClick, onRightClick }: CellButto
                 className="flex items-center justify-center rounded-sm bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-colors select-none"
                 onClick={onClick}
                 onContextMenu={onRightClick}
+                onTouchStart={(e) => { e.preventDefault(); onTouchStart(); }}
+                onTouchEnd={onTouchEnd}
             >
                 🚩
             </button>
@@ -503,6 +574,8 @@ function CellButton({ cell, size, gameStatus, onClick, onRightClick }: CellButto
             `}
             onClick={onClick}
             onContextMenu={onRightClick}
+            onTouchStart={(e) => { e.preventDefault(); onTouchStart(); }}
+            onTouchEnd={onTouchEnd}
         />
     );
 }
