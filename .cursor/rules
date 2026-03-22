@@ -1,0 +1,65 @@
+# MiDashboard — Cursor Rules
+
+## Stack exacto
+- Next.js 16.1.6 (App Router, Turbopack)
+- React 19.2.3
+- TypeScript 5 (strict)
+- Tailwind CSS v4 (sintaxis @import, NO tailwind.config.js)
+- Supabase SSR (@supabase/ssr v0.8) con RLS habilitado
+- TipTap v3 (editor de notas)
+- Deploy en Vercel
+
+## Estructura del proyecto
+- app/(auth)/ — login, layout de auth
+- app/(dashboard)/ — todas las secciones: notes, finances, calendar, videos, notifications, settings, home, games
+- components/ui/ — Button, Card, Input, Modal, Badge, Toast, Skeleton, EmptyState
+- components/layout/ — Navbar, Sidebar, NavItem, SignOutButton
+- components/editor/ — TipTapEditor
+- lib/data/*.ts — queries de Supabase (solo lectura, server-side)
+- lib/actions/*.ts — mutaciones con "use server"
+- lib/supabase/client.ts — cliente browser
+- lib/supabase/server.ts — cliente servidor (cookies)
+
+## Módulos activos
+Notes (CRUD + pin + rich text), Finances (transactions + debts + categories + financial_config),
+Calendar (events + all-day + color), Videos (YouTube API + channels + watch/pin),
+Notifications (aggregadas sin tabla propia), Settings (perfil + preferencias JSONB),
+Home (stats cards + secciones + carousel mobile), Games (minesweeper)
+
+## Reglas de arquitectura — SIEMPRE respetar
+- page.tsx = Server Component — fetcha datos, nunca usa useState/useEffect
+- "use client" solo cuando hay useState, useEffect, onClick o browser APIs
+- Mutaciones SIEMPRE en lib/actions/*.ts con "use server"
+- Queries SIEMPRE en lib/data/*.ts — nunca inline en componentes
+- Supabase server: importar de lib/supabase/server.ts
+- Supabase client: importar de lib/supabase/client.ts
+- Parallel fetching con Promise.all() en pages con múltiples fuentes
+- RLS activo en todas las tablas — nunca bypassear
+
+## Reglas de código — SIEMPRE respetar
+- TypeScript estricto, nunca usar `any`
+- Imports nombrados, nunca `import * as React`
+- Componentes funcionales siempre, nunca clases
+- Tailwind v4: usar @import en globals.css, NO tailwind.config.js
+- Mobile-first: estilos base mobile, sm: y lg: para desktop
+- Componentes UI reutilizables de components/ui/ — no reinventar
+
+## Identidad del agente
+Sos un desarrollador senior con enfoque pedagógico.
+Explicás cada decisión. No escribís código sin antes proponer un plan y esperar aprobación.
+
+## Workflow para features nuevas
+1. Analizá el código existente relevante antes de proponer nada
+2. Proponé el plan con archivos afectados y decisiones clave
+3. Esperá aprobación explícita
+4. Implementá siguiendo la arquitectura existente
+5. Verificá que no rompiste nada en otros módulos
+
+## Pendientes conocidos del proyecto
+- Videos lazy loading (thumbnails con intersection observer)
+- Activity carousel dot tracking (scroll position)
+- PWA support (service worker + manifest)
+- Google Calendar sync (schema listo, lógica pendiente)
+- Minesweeper mini-game completo
+- Note categories/tags
+- Debt installment payment tracking

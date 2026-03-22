@@ -17,6 +17,7 @@ import type { Highscore } from "@/lib/data/highscores";
 type Difficulty = "easy" | "medium" | "hard";
 type GameStatus = "idle" | "playing" | "won" | "lost";
 type AnimState = "idle" | "revealing" | "exploding" | "flagging";
+type InputMode = "dig" | "flag";
 
 type Cell = {
     isMine: boolean;
@@ -166,11 +167,12 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
     const [gameStatus, setGameStatus] = useState<GameStatus>("idle");
     const [minesLeft, setMinesLeft] = useState(DIFFICULTY_CONFIG.easy.mines);
     const [timer, setTimer] = useState(0);
-    const [zoom, setZoom] = useState(1);
+    const [cellFontSize, setCellFontSize] = useState(12);
     const [highscores, setHighscores] = useState(initialHighscores);
     const [showHighscores, setShowHighscores] = useState(false);
     const [savingScore, setSavingScore] = useState(false);
     const [isFirstClick, setIsFirstClick] = useState(true);
+    const [inputMode, setInputMode] = useState<InputMode>("dig");
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const boardContainerRef = useRef<HTMLDivElement>(null);
@@ -216,19 +218,27 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameStatus]);
 
-    // ─── Auto-fit zoom: comfortable cell size ─────────────
+    // ─── Responsive cell font sizing via ResizeObserver ────
     useEffect(() => {
-        const targetCellSize = window.innerWidth < 640 ? 28 : 32;
-        if (difficulty === "easy") {
-            if (!boardContainerRef.current) return;
-            const containerWidth = boardContainerRef.current.clientWidth - 24;
-            const maxCellW = Math.floor(containerWidth / config.cols);
-            const optimalCell = Math.min(maxCellW, targetCellSize);
-            setZoom(+(optimalCell / 32).toFixed(1));
-        } else {
-            setZoom(+(targetCellSize / 32).toFixed(1));
-        }
-    }, [difficulty, config.cols]);
+        const container = boardContainerRef.current;
+        if (!container) return;
+
+        const calcFontSize = () => {
+            const padding = 24; // p-3 = 12px each side
+            const gapTotal = (config.cols - 1) * 2; // 2px gap
+            const available = container.clientWidth - padding - gapTotal;
+            const cellWidth = available / config.cols;
+            const nextFontSize = Math.round(Math.max(8, Math.min(cellWidth * 0.52, 14)));
+            setCellFontSize(nextFontSize);
+        };
+
+        // Initial calc
+        calcFontSize();
+
+        const observer = new ResizeObserver(() => calcFontSize());
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [config.cols]);
 
     // ─── Reset game ───────────────────────────────────────
     const resetGame = useCallback((diff?: Difficulty) => {
@@ -242,8 +252,24 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
         if (diff) setDifficulty(diff);
     }, [difficulty]);
 
-    // ─── Handle left click (reveal) ───────────────────────
+    // ─── Handle left click (reveal or flag based on mode) ───
     const handleClick = useCallback((row: number, col: number) => {
+        // Flag mode: left click = flag/unflag
+        if (inputMode === "flag") {
+            if (gameStatus === "lost" || gameStatus === "won") return;
+            const c = board[row][col];
+            if (c.isRevealed) return;
+            const newBoard = board.map(r => r.map(cell => {
+                if (cell.row === row && cell.col === col) {
+                    return { ...cell, isFlagged: !cell.isFlagged };
+                }
+                return cell;
+            }));
+            setBoard(newBoard);
+            setMinesLeft(prev => c.isFlagged ? prev + 1 : prev - 1);
+            return;
+        }
+
         if (gameStatus === "lost" || gameStatus === "won") return;
 
         const cell = board[row][col];
@@ -283,7 +309,7 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
         if (checkWin(revealedBoard)) {
             setGameStatus("won");
         }
-    }, [board, gameStatus, isFirstClick, config]);
+    }, [board, gameStatus, isFirstClick, config, inputMode]);
 
     // ─── Handle right click (flag) ────────────────────────
     const handleRightClick = useCallback((e: React.MouseEvent, row: number, col: number) => {
@@ -336,23 +362,25 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
         if (longPressRef.current) clearTimeout(longPressRef.current);
     }, []);
 
-    // ─── Cell size based on zoom ───────────────────────────
-    const cellSize = Math.round(32 * zoom);
+
 
     // ─── Render ───────────────────────────────────────────
     return (
         <div className="space-y-3">
-            {/* ── Row 1: difficulty + smiley + stats ── */}
+
+            {/* ─── HUD ─────────────────────────────────────────── */}
             <div className="flex items-center gap-2 flex-wrap">
+
+                {/* Difficulty */}
                 <div className="flex rounded-lg overflow-hidden border border-[var(--color-border)]">
                     {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
                         <button
                             key={d}
-                            onClick={() => resetGame(d)}
-                            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                            onClick={() => { resetGame(d); setInputMode("dig"); }}
+                            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
                                 difficulty === d
                                     ? "bg-[var(--color-brand)] text-white"
-                                    : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)]"
+                                    : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-3)]"
                             }`}
                         >
                             {DIFFICULTY_CONFIG[d].label}
@@ -360,127 +388,144 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                     ))}
                 </div>
 
+                {/* Smiley reset */}
                 <button
-                    onClick={() => resetGame()}
-                    className="px-3 py-1.5 text-lg rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-colors"
+                    onClick={() => { resetGame(); setInputMode("dig"); }}
+                    className="w-9 h-9 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-all active:scale-95 text-xl flex items-center justify-center"
                     title="New game"
                 >
                     {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
                 </button>
 
-                {/* Stats */}
-                <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] ml-auto">
-                    <span className="text-sm font-mono text-[var(--color-text-primary)]">
-                        💣 {minesLeft}
-                    </span>
-                    <span className="text-sm font-mono text-[var(--color-text-primary)]">
-                        ⏱️ {formatTime(timer)}
-                    </span>
-                </div>
-            </div>
-
-            {/* ── Row 2: zoom + scores ── */}
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(1)))}
-                        className="w-7 h-7 rounded-md bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] text-sm font-bold text-[var(--color-text-secondary)] transition-colors"
-                    >
-                        −
-                    </button>
-                    <span className="text-xs text-[var(--color-text-muted)] w-10 text-center">
-                        {Math.round(zoom * 100)}%
-                    </span>
-                    <button
-                        onClick={() => setZoom(z => Math.min(2, +(z + 0.1).toFixed(1)))}
-                        className="w-7 h-7 rounded-md bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] text-sm font-bold text-[var(--color-text-secondary)] transition-colors"
-                    >
-                        +
-                    </button>
+                {/* Mine counter */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] font-mono text-sm">
+                    <span>💣</span>
+                    <span className="text-[var(--color-text-primary)] tabular-nums w-6 text-center">{minesLeft}</span>
                 </div>
 
-                <span className="text-xs text-[var(--color-text-muted)]">
-                    Hold cell to flag on mobile
-                </span>
+                {/* Timer */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] font-mono text-sm">
+                    <span>⏱️</span>
+                    <span className="text-[var(--color-text-primary)] tabular-nums w-10">{formatTime(timer)}</span>
+                </div>
 
+                {/* Highscores */}
                 <button
                     onClick={() => setShowHighscores(s => !s)}
-                    className="ml-auto px-3 py-1.5 text-sm font-medium rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] text-[var(--color-text-secondary)] transition-colors"
+                    className={`ml-auto px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                        showHighscores
+                            ? "bg-[var(--color-brand)] text-white border-[var(--color-brand)]"
+                            : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-surface-3)]"
+                    }`}
                 >
-                    🏆 Scores
+                    🏆
                 </button>
             </div>
 
-            {/* ── Status message ── */}
+            {/* ─── Mode toggle + hint ───────────────────────────── */}
+            <div className="flex items-center gap-2">
+                <span className="text-xs text-[var(--color-text-muted)]">Mode:</span>
+                <div className="flex rounded-lg overflow-hidden border border-[var(--color-border)]">
+                    <button
+                        onClick={() => setInputMode("dig")}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                            inputMode === "dig"
+                                ? "bg-[#1e40af] text-blue-100"
+                                : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)]"
+                        }`}
+                    >
+                        <span>⛏️</span> Dig
+                    </button>
+                    <button
+                        onClick={() => setInputMode("flag")}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                            inputMode === "flag"
+                                ? "bg-[#991b1b] text-red-100"
+                                : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)]"
+                        }`}
+                    >
+                        <span>🚩</span> Flag
+                    </button>
+                </div>
+                <span className="text-xs text-[var(--color-text-muted)] hidden sm:inline">
+                    {inputMode === "dig" ? "Click to reveal · Right-click to flag · Hold on mobile" : "Click to place/remove flag · Right-click also flags"}
+                </span>
+            </div>
+
+            {/* ─── Status banner ──────────────────────────────── */}
             {(gameStatus === "won" || gameStatus === "lost") && (
-                <div className={`rounded-xl border px-4 py-3 text-sm font-medium text-center ${
+                <div className={`rounded-xl border px-4 py-3 text-sm font-semibold text-center ${
                     gameStatus === "won"
-                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                        : "border-red-500/40 bg-red-500/10 text-red-400"
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+                        : "border-red-500/50 bg-red-500/10 text-red-300"
                 }`}>
                     {gameStatus === "won"
-                        ? `🎉 You won in ${formatTime(timer)}! ${savingScore ? "Saving score..." : "Score saved!"}`
-                        : "💥 Game over! Click 🙂 to try again."}
+                        ? `🎉 You won in ${formatTime(timer)}! ${savingScore ? "Saving..." : "Score saved!"}`
+                        : "💥 Game over! Press 🙂 to play again."}
                 </div>
             )}
 
-            {/* ── Board — fixed height pan container ── */}
-            <div
-                ref={boardContainerRef}
-                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-3"
-                style={{
-                    height: "70vh",
-                    overflow: "auto",
-                    overscrollBehavior: "contain",
-                    WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
-                }}
-            >
+            {/* ─── Board ──────────────────────────────────────── */}
+            <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
                 <div
+                    ref={boardContainerRef}
+                    className="rounded-xl border border-[var(--color-border)] bg-[#0a0a0f] p-3 select-none"
                     style={{
-                        display: "grid",
-                        gridTemplateColumns: `repeat(${config.cols}, ${cellSize}px)`,
-                        gap: "2px",
-                        width: "fit-content",
+                        display: "inline-block",
+                        overflowX: "hidden",
                     }}
                 >
-                    {board.map((row) =>
-                        row.map((cell) => (
-                            <CellButton
-                                key={`${cell.row}-${cell.col}`}
-                                cell={cell}
-                                size={cellSize}
-                                gameStatus={gameStatus}
-                                onClick={() => handleClick(cell.row, cell.col)}
-                                onRightClick={(e) => handleRightClick(e, cell.row, cell.col)}
-                                onTouchStart={() => handleTouchStart(cell.row, cell.col)}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
-                            />
-                        ))
-                    )}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: `repeat(${config.cols}, minmax(0, 40px))`,
+                            gap: "2px",
+                            width: "100%",
+                            margin: "0 auto",
+                        }}
+                    >
+                        {board.map((row) =>
+                            row.map((cell) => (
+                                <CellButton
+                                    key={`${cell.row}-${cell.col}`}
+                                    cell={cell}
+                                    fontSize={cellFontSize}
+                                    gameStatus={gameStatus}
+                                    inputMode={inputMode}
+                                    onClick={() => handleClick(cell.row, cell.col)}
+                                    onRightClick={(e) => handleRightClick(e, cell.row, cell.col)}
+                                    onTouchStart={() => handleTouchStart(cell.row, cell.col)}
+                                    onTouchMove={handleTouchMove}
+                                    onTouchEnd={handleTouchEnd}
+                                />
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* ── Highscores panel ── */}
+            {/* ─── Highscores panel ─────────────────────────────── */}
             {showHighscores && (
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4">
                     <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
-                        🏆 Personal Highscores
+                        🏆 Personal Best
                     </h2>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-6">
                         {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
                             <div key={d}>
-                                <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-2">
+                                <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
                                     {DIFFICULTY_CONFIG[d].label}
                                 </p>
                                 {highscores[d].length === 0 ? (
-                                    <p className="text-xs text-[var(--color-text-muted)]">No scores yet</p>
+                                    <p className="text-xs text-[var(--color-text-muted)] italic">No scores yet</p>
                                 ) : (
-                                    <ol className="space-y-1">
+                                    <ol className="space-y-1.5">
                                         {highscores[d].slice(0, 5).map((score, i) => (
-                                            <li key={score.id} className="flex items-center gap-2 text-xs">
-                                                <span className="text-[var(--color-text-muted)] w-4">{i + 1}.</span>
-                                                <span className="font-mono text-[var(--color-text-primary)]">
+                                            <li key={score.id} className="flex items-center gap-2">
+                                                <span className={`text-xs font-bold w-4 ${i === 0 ? "text-yellow-400" : "text-[var(--color-text-muted)]"}`}>
+                                                    {i === 0 ? "🥇" : `${i + 1}.`}
+                                                </span>
+                                                <span className="font-mono text-sm text-[var(--color-text-primary)]">
                                                     {formatTime(score.time_seconds)}
                                                 </span>
                                             </li>
@@ -499,8 +544,9 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
 // ─── CellButton sub-component ─────────────────────────────
 interface CellButtonProps {
     cell: Cell;
-    size: number;
+    fontSize: number;
     gameStatus: GameStatus;
+    inputMode: InputMode;
     onClick: () => void;
     onRightClick: (e: React.MouseEvent) => void;
     onTouchStart: () => void;
@@ -508,20 +554,19 @@ interface CellButtonProps {
     onTouchEnd: () => void;
 }
 
-function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStart, onTouchMove, onTouchEnd }: CellButtonProps) {
-    const fontSize = Math.max(10, Math.round(size * 0.45));
+function CellButton({ cell, fontSize, gameStatus, inputMode, onClick, onRightClick, onTouchStart, onTouchMove, onTouchEnd }: CellButtonProps) {
+    const isInteractive = gameStatus !== "lost" && gameStatus !== "won";
 
-    // Revealed mine that exploded
+    // Revealed mine
     if (cell.isRevealed && cell.isMine) {
         return (
             <div
-                style={{ width: size, height: size, fontSize }}
-                className={`
-                    flex items-center justify-center rounded-sm select-none
-                    ${cell.animState === "exploding"
-                        ? "bg-red-500 animate-pulse"
-                        : "bg-[var(--color-surface-3)]"}
-                `}
+                style={{ width: "100%", aspectRatio: "1 / 1", fontSize }}
+                className={`flex items-center justify-center select-none ${
+                    cell.animState === "exploding"
+                        ? "bg-red-600 ring-1 ring-red-400 animate-pulse rounded-sm"
+                        : "bg-[#3a1a1a] rounded-sm"
+                }`}
             >
                 💣
             </div>
@@ -533,12 +578,14 @@ function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStar
         return (
             <div
                 style={{
-                    width: size,
-                    height: size,
+                    width: "100%",
+                    aspectRatio: "1 / 1",
                     fontSize,
                     color: cell.neighborCount > 0 ? NUMBER_COLORS[cell.neighborCount] : "transparent",
+                    fontWeight: 800,
+                    letterSpacing: "-0.02em",
                 }}
-                className="flex items-center justify-center rounded-sm font-bold bg-[var(--color-surface-0)] border border-[var(--color-border)] select-none"
+                className="flex items-center justify-center rounded-sm select-none bg-[#0f0f16] border border-[#1a1a26]"
             >
                 {cell.neighborCount > 0 ? cell.neighborCount : ""}
             </div>
@@ -549,11 +596,14 @@ function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStar
     if (cell.isFlagged) {
         return (
             <button
-                style={{ width: size, height: size, fontSize }}
-                className="flex items-center justify-center rounded-sm bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:bg-[var(--color-surface-3)] transition-colors select-none"
+                style={{ width: "100%", aspectRatio: "1 / 1", fontSize, borderWidth: "1px" }}
+                className={`flex items-center justify-center rounded-sm select-none transition-colors duration-75
+                    bg-[#2d1a0e] border-t-[#7c4a1e] border-l-[#7c4a1e] border-b-[#3d2010] border-r-[#3d2010]
+                    ${isInteractive ? "hover:brightness-110 active:scale-95" : "cursor-default"}
+                `}
                 onClick={onClick}
                 onContextMenu={onRightClick}
-                onTouchStart={() => onTouchStart()}
+                onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
             >
@@ -562,20 +612,28 @@ function CellButton({ cell, size, gameStatus, onClick, onRightClick, onTouchStar
         );
     }
 
-    // Unrevealed cell
+    // Unrevealed cell — 3D raised look
+    const cursorClass = !isInteractive
+        ? "cursor-default"
+        : inputMode === "flag"
+        ? "cursor-cell"
+        : "cursor-pointer";
+
     return (
         <button
-            style={{ width: size, height: size }}
-            className={`
-                rounded-sm border border-[var(--color-border)] transition-all duration-75 select-none
-                ${gameStatus === "lost" || gameStatus === "won"
-                    ? "bg-[var(--color-surface-2)] cursor-default"
-                    : "bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-3)] active:scale-95 cursor-pointer"
+            style={{ width: "100%", aspectRatio: "1 / 1", borderWidth: "1px" }}
+            className={`rounded-sm select-none transition-colors duration-75
+                bg-[#1e2030]
+                border-t-[#3a3d52] border-l-[#3a3d52]
+                border-b-[#0d0e14] border-r-[#0d0e14]
+                ${isInteractive
+                    ? `hover:bg-[#262940] hover:border-t-[#4a4d66] active:bg-[#161820] active:border-t-[#0d0e14] active:border-l-[#0d0e14] active:border-b-[#3a3d52] active:border-r-[#3a3d52] ${cursorClass}`
+                    : ""
                 }
             `}
             onClick={onClick}
             onContextMenu={onRightClick}
-            onTouchStart={() => onTouchStart()}
+            onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         />
