@@ -472,16 +472,17 @@ export default function MinesweeperGame({ initialHighscores }: MinesweeperGamePr
                     className="rounded-xl border border-[var(--color-border)] bg-[#0a0a0f] p-3 select-none"
                     style={{
                         display: "inline-block",
-                        overflowX: "hidden",
+                        overflow: "auto",
+                        overscrollBehavior: "contain",
+                        WebkitOverflowScrolling: "touch",
                     }}
                 >
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: `repeat(${config.cols}, minmax(0, 40px))`,
+                            gridTemplateColumns: `repeat(${config.cols}, minmax(28px, 40px))`,
                             gap: "2px",
                             width: "100%",
-                            margin: "0 auto",
                         }}
                     >
                         {board.map((row) =>
