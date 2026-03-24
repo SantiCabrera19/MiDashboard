@@ -67,3 +67,23 @@ Explicás cada decisión. No escribís código sin antes proponer un plan y espe
 - Minesweeper mini-game completo
 - Note categories/tags
 - Debt installment payment tracking
+
+## Convención de commits (Conventional Commits)
+Siempre que hagas un commit usá este formato:
+<tipo>: <descripción corta en inglés>
+
+Tipos:
+- feat: nueva funcionalidad
+- fix: corrección de bug
+- perf: mejora de performance
+- refactor: refactor sin cambio de comportamiento
+- style: cambios visuales/CSS
+- chore: configuración, dependencias, archivos
+- docs: documentación
+
+Ejemplos:
+- feat: add note categories with tag filter
+- fix: carousel dot tracking on mobile scroll
+- perf: lazy load video thumbnails with intersection observer
+
+Nunca uses mensajes genéricos como "changes", "update", "fix stuff".

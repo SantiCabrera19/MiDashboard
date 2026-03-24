@@ -9,6 +9,7 @@
 // - The Server Component (home/page.tsx) passes data as props
 //   — zero extra DB queries
 
+import { useState, useRef } from "react";
 import Link from "next/link";
 import type { Note } from "@/lib/data/notes";
 import type { Transaction } from "@/lib/data/transactions";
@@ -65,6 +66,17 @@ export default function ActivityCarousel({
     // Take top 6
     const feed = items.slice(0, 6);
 
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    const handleScroll = () => {
+        const el = scrollRef.current;
+        if (!el || feed.length === 0) return;
+        const cardWidth = el.scrollWidth / feed.length;
+        const idx = Math.round(el.scrollLeft / cardWidth);
+        setActiveIndex(Math.min(Math.max(idx, 0), feed.length - 1));
+    };
+
     if (feed.length === 0) return null;
 
     return (
@@ -81,6 +93,8 @@ export default function ActivityCarousel({
 
             {/* Carousel container — scroll snap */}
             <div
+                ref={scrollRef}
+                onScroll={handleScroll}
                 className="flex gap-3 overflow-x-auto pb-2"
                 style={{
                     scrollSnapType: "x mandatory",
@@ -95,11 +109,15 @@ export default function ActivityCarousel({
             </div>
 
             {/* Dot indicators */}
-            <div className="flex justify-center gap-1.5 mt-3">
+            <div className="flex justify-center items-center gap-1.5 mt-3">
                 {feed.map((_, i) => (
                     <div
                         key={i}
-                        className="h-1 w-1 rounded-full bg-[var(--color-border)]"
+                        className={
+                            i === activeIndex
+                                ? "h-1.5 w-4 rounded-full bg-[var(--color-brand)] transition-all duration-200"
+                                : "h-1 w-1 rounded-full bg-[var(--color-border)] transition-all duration-200"
+                        }
                     />
                 ))}
             </div>
