@@ -11,11 +11,12 @@
 import type { Metadata } from "next";
 import { Card, EmptyState } from "@/components/ui";
 import { getTransactions, getCategories, getMonthlySummary } from "@/lib/data/transactions";
-import { getDebts } from "@/lib/data/debts";
+import { getDebts, getDebtPayments } from "@/lib/data/debts";
 import TransactionRow from "./TransactionRow";
 import NewTransactionButton from "./NewTransactionButton";
 import DebtCard from "./DebtCard";
 import NewDebtButton from "./NewDebtButton";
+import SpendingChart from "./SpendingChart";
 
 export const metadata: Metadata = {
     title: "Finances",
@@ -36,6 +37,11 @@ export default async function FinancesPage() {
     ]);
 
     const currentMonth = monthlySummary[0];
+    const debtPaymentsById = new Map(
+        await Promise.all(
+            debts.map(async (debt) => [debt.id, await getDebtPayments(debt.id)] as const)
+        )
+    );
 
     return (
         <div>
@@ -82,6 +88,12 @@ export default async function FinancesPage() {
                 </div>
             )}
 
+            <SpendingChart
+                transactions={transactions}
+                monthlySummary={monthlySummary}
+                categories={categories}
+            />
+
             {/* Transactions list */}
             {transactions.length > 0 ? (
                 <Card>
@@ -117,7 +129,11 @@ export default async function FinancesPage() {
                 {debts.length > 0 ? (
                     <div className="space-y-3">
                         {debts.map((debt) => (
-                            <DebtCard key={debt.id} debt={debt} />
+                            <DebtCard
+                                key={debt.id}
+                                debt={debt}
+                                payments={debtPaymentsById.get(debt.id) ?? []}
+                            />
                         ))}
                     </div>
                 ) : (

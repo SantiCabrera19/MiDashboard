@@ -11,6 +11,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 
 // Re-export the row type for use in components
 export type Debt = Tables<"debts">;
+export type DebtPayment = Tables<"debt_payments">;
 
 /**
  * Fetch all debts, ordered by active first, then by nearest due date.
@@ -27,5 +28,24 @@ export async function getDebts(): Promise<Debt[]> {
         console.error("Error fetching debts:", error.message);
         return [];
     }
+    return data;
+}
+
+/**
+ * Fetch payment history for a single debt (most recent first).
+ */
+export async function getDebtPayments(debtId: string): Promise<DebtPayment[]> {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from("debt_payments")
+        .select()
+        .eq("debt_id", debtId)
+        .order("paid_at", { ascending: false });
+
+    if (error) {
+        console.error("Error fetching debt payments:", error.message);
+        return [];
+    }
+
     return data;
 }

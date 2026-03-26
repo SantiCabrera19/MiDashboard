@@ -5,9 +5,9 @@
 // mark-as-paid, and delete actions.
 
 import { useState, useTransition } from "react";
-import { Card, Badge, Button, useToast } from "@/components/ui";
-import { markDebtPaid, deleteDebt } from "@/lib/actions/debts";
-import type { Debt } from "@/lib/data/debts";
+import { Card, Badge, Button, Input, useToast } from "@/components/ui";
+import { markDebtPaid, deleteDebt, recordInstallmentPayment } from "@/lib/actions/debts";
+import type { Debt, DebtPayment } from "@/lib/data/debts";
 
 function formatCurrency(amount: number): string {
     return `$${Math.abs(amount).toLocaleString("es-AR")}`;
@@ -19,16 +19,28 @@ function formatDate(dateStr: string): string {
     });
 }
 
-export default function DebtCard({ debt }: { debt: Debt }) {
+interface DebtCardProps {
+    debt: Debt;
+    payments: DebtPayment[];
+}
+
+export default function DebtCard({ debt, payments }: DebtCardProps) {
     const [showDelete, setShowDelete] = useState(false);
+    const [showInstallmentForm, setShowInstallmentForm] = useState(false);
+    const [installmentAmount, setInstallmentAmount] = useState("");
+    const [installmentNote, setInstallmentNote] = useState("");
     const [isPending, startTransition] = useTransition();
     const toast = useToast();
 
     const isPaid = debt.status === "paid";
-    const paidAmount = Number(debt.paid_amount ?? 0);
+    const paidAmount = payments.reduce(
+        (sum, payment) => sum + Number(payment.amount_paid),
+        0
+    );
     const totalAmount = Number(debt.total_amount);
-    const remainingAmount = Number(debt.remaining_amount ?? (totalAmount - paidAmount));
+    const remainingAmount = Math.max(0, totalAmount - paidAmount);
     const progressPct = totalAmount > 0 ? Math.min(100, (paidAmount / totalAmount) * 100) : 0;
+    const recentPayments = payments.slice(0, 3);
 
     function handleMarkPaid() {
         startTransition(async () => {
@@ -46,6 +58,31 @@ export default function DebtCard({ debt }: { debt: Debt }) {
                 toast.success("Debt deleted");
             } else {
                 toast.error(result.error ?? "Failed to delete debt");
+            }
+        });
+    }
+
+    function handleRecordInstallment() {
+        startTransition(async () => {
+            const amount = Number(installmentAmount);
+            if (!Number.isFinite(amount) || amount <= 0) {
+                toast.error("Enter a valid amount");
+                return;
+            }
+
+            const result = await recordInstallmentPayment(
+                debt.id,
+                amount,
+                installmentNote.trim() || undefined
+            );
+
+            if (result.success) {
+                toast.success("Installment payment recorded");
+                setInstallmentAmount("");
+                setInstallmentNote("");
+                setShowInstallmentForm(false);
+            } else {
+                toast.error(result.error ?? "Failed to record payment");
             }
         });
     }
@@ -72,6 +109,14 @@ export default function DebtCard({ debt }: { debt: Debt }) {
                     </div>
                     {!isPaid && (
                         <div className="flex gap-1 shrink-0">
+                            <button
+                                onClick={() => setShowInstallmentForm((prev) => !prev)}
+                                disabled={isPending}
+                                className="rounded-md p-1.5 text-xs text-[var(--color-brand)] hover:bg-[var(--color-brand)]/10 transition-colors"
+                                title="Pay installment"
+                            >
+                                💸
+                            </button>
                             <button
                                 onClick={handleMarkPaid}
                                 disabled={isPending}
@@ -112,6 +157,52 @@ export default function DebtCard({ debt }: { debt: Debt }) {
                     </div>
                 </div>
 
+                {/* Installment form */}
+                {!isPaid && showInstallmentForm && (
+                    <div className="mb-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3">
+                        <p className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                            Record installment payment
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <Input
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                step="0.01"
+                                placeholder="Amount"
+                                value={installmentAmount}
+                                onChange={(event) => setInstallmentAmount(event.target.value)}
+                                disabled={isPending}
+                            />
+                            <Input
+                                type="text"
+                                placeholder="Note (optional)"
+                                value={installmentNote}
+                                onChange={(event) => setInstallmentNote(event.target.value)}
+                                disabled={isPending}
+                            />
+                        </div>
+                        <div className="mt-2 flex justify-end gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowInstallmentForm(false)}
+                                disabled={isPending}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={handleRecordInstallment}
+                                loading={isPending}
+                            >
+                                Save payment
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Amount breakdown */}
                 <div className="grid grid-cols-3 gap-3">
                     <div>
@@ -147,6 +238,30 @@ export default function DebtCard({ debt }: { debt: Debt }) {
                                 📅 Due {formatDate(debt.next_due_date)}
                             </span>
                         )}
+                    </div>
+                )}
+
+                {/* Mini payment history */}
+                {recentPayments.length > 0 && (
+                    <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+                        <p className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                            Last payments
+                        </p>
+                        <div className="space-y-1.5">
+                            {recentPayments.map((payment) => (
+                                <div
+                                    key={payment.id}
+                                    className="flex items-center justify-between rounded-md bg-[var(--color-surface-2)] px-2 py-1.5"
+                                >
+                                    <span className="text-xs text-[var(--color-text-primary)]">
+                                        {formatCurrency(Number(payment.amount_paid))}
+                                    </span>
+                                    <span className="text-xs text-[var(--color-text-muted)]">
+                                        {new Date(payment.paid_at).toLocaleDateString("es-AR")}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </Card>

@@ -10,12 +10,10 @@
 // - NoteActions → Client Component for edit/delete/pin actions
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getNoteById } from "@/lib/data/notes";
 import { isHtmlContent, plainTextToHtml } from "@/lib/utils/note-content";
-import { Badge } from "@/components/ui";
-import Link from "next/link";
-import NoteDetailActions from "./NoteDetailActions";
+import { Badge, Button, Card } from "@/components/ui";
 
 // Dynamic metadata — page title matches the note title
 export async function generateMetadata({
@@ -43,56 +41,57 @@ export default async function NoteDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
-
-    // Safety check: Next.js might accidentally route /notes/new here
-    // during development or if the static /notes/new route isn't caught first.
-    if (id === "new") {
-        notFound();
-    }
+    if (id === "new") redirect("/notes");
 
     const note = await getNoteById(id);
 
-    // If note not found → Next.js shows the nearest not-found.tsx or 404
-    if (!note) {
-        notFound();
-    }
+    if (!note) redirect("/notes");
 
     return (
         <div className="mx-auto max-w-3xl">
-            {/* Back link */}
-            <Link
-                href="/notes"
-                className="mb-6 inline-flex items-center gap-1 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-            >
-                ← Back to Notes
-            </Link>
-
-            {/* Header */}
-            <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-                            {note.title ?? "Untitled"}
-                        </h1>
-                        {note.pinned && <Badge variant="info">📌 Pinned</Badge>}
-                        {note.is_markdown && <Badge>Markdown</Badge>}
+            <Card className="mb-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
+                                {note.title ?? "Untitled"}
+                            </h1>
+                            {note.pinned && <Badge variant="info">📌 Pinned</Badge>}
+                            {note.tags && note.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                    {note.tags.map((tag) => (
+                                        <Badge key={tag} variant="default">
+                                            {tag}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                            Updated{" "}
+                            {note.updated_at
+                                ? new Date(note.updated_at).toLocaleDateString("es-AR")
+                                : "-"}
+                        </p>
                     </div>
-                    <div className="mt-2 flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
-                        {note.created_at && (
-                            <span>Created {new Date(note.created_at).toLocaleDateString()}</span>
-                        )}
-                        {note.updated_at && (
-                            <span>• Updated {new Date(note.updated_at).toLocaleDateString()}</span>
-                        )}
+
+                    <div className="flex gap-2">
+                        <form action="/notes" method="get">
+                            <Button variant="ghost" size="sm" type="submit">
+                                ← Back
+                            </Button>
+                        </form>
+                        <form action={`/notes/${note.id}/edit`} method="get">
+                            <Button variant="secondary" size="sm" type="submit">
+                                ✏️ Edit
+                            </Button>
+                        </form>
                     </div>
                 </div>
-
-                {/* Actions — Client Component for interactivity */}
-                <NoteDetailActions note={note} />
-            </div>
+            </Card>
 
             {/* Note content */}
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
+            <Card>
                 {isHtmlContent(note.content) ? (
                     <div
                         className="prose prose-invert max-w-none leading-relaxed"
@@ -104,7 +103,7 @@ export default async function NoteDetailPage({
                         dangerouslySetInnerHTML={{ __html: plainTextToHtml(note.content) }}
                     />
                 )}
-            </div>
+            </Card>
         </div>
     );
 }
