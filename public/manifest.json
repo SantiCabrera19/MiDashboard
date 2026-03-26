@@ -1,7 +1,7 @@
 {
   "name": "MeDashboard",
   "short_name": "MeDashboard",
-  "description": "Your personal dashboard — notes, finances, calendar, videos.",
+  "description": "Your personal dashboard - notes, finances, calendar, videos.",
   "start_url": "/home",
   "display": "standalone",
   "background_color": "#0d1117",

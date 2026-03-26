@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -33,10 +33,13 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "MeDashboard",
   },
-  themeColor: "#0d1117",
   icons: {
     apple: "/icons/apple-touch-icon.png",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0d1117",
 };
 
 // ─── Root Layout ────────────────────────────────────────
