@@ -18,6 +18,7 @@ import TipTapEditor from "@/components/editor/TipTapEditor";
 import { Button, Input, useToast } from "@/components/ui";
 import { updateNote } from "@/lib/actions/notes";
 import type { Note } from "@/lib/data/notes";
+import TagSelector from "../../TagSelector";
 
 interface EditNoteClientProps {
     note: Note;
@@ -29,6 +30,7 @@ export default function EditNoteClient({ note }: EditNoteClientProps) {
 
     const [title, setTitle] = useState(note.title ?? "");
     const [content, setContent] = useState(note.content);
+    const [tags, setTags] = useState(note.tags ?? []);
     const [isSaving, setIsSaving] = useState(false);
 
     async function handleSave() {
@@ -46,6 +48,7 @@ export default function EditNoteClient({ note }: EditNoteClientProps) {
             title,
             content,
             is_markdown: false,
+            tags,
         };
 
         const result = await updateNote(note.id, payload);
@@ -101,6 +104,8 @@ export default function EditNoteClient({ note }: EditNoteClientProps) {
                         className="text-lg font-medium"
                     />
                 </div>
+
+                <TagSelector selected={tags} onChange={setTags} />
 
                 <div>
                     <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">

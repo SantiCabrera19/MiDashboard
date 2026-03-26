@@ -14,8 +14,10 @@ import type { Metadata } from "next";
 import { EmptyState } from "@/components/ui";
 import { getCalendarEvents } from "@/lib/data/calendar";
 import type { CalendarEvent } from "@/lib/data/calendar";
+import { getGoogleCalendarStatus } from "@/lib/actions/google-calendar";
 import EventCard from "./EventCard";
 import NewEventButton from "./NewEventButton";
+import SyncGoogleCalendarButton from "./SyncGoogleCalendarButton";
 
 export const metadata: Metadata = {
     title: "Calendar",
@@ -50,7 +52,10 @@ function groupEventsByTime(events: CalendarEvent[]) {
 }
 
 export default async function CalendarPage() {
-    const events = await getCalendarEvents();
+    const [events, googleStatus] = await Promise.all([
+        getCalendarEvents(),
+        getGoogleCalendarStatus(),
+    ]);
     const { today, upcoming, past } = groupEventsByTime(events);
 
     return (
@@ -65,7 +70,10 @@ export default async function CalendarPage() {
                         {events.length} {events.length === 1 ? "event" : "events"}
                     </p>
                 </div>
-                <NewEventButton />
+                <div className="flex items-center gap-2">
+                    {googleStatus.connected && <SyncGoogleCalendarButton />}
+                    <NewEventButton />
+                </div>
             </div>
 
             {events.length > 0 ? (

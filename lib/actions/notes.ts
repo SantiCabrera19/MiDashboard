@@ -32,7 +32,7 @@ type ActionResponse = {
  * Create a new note.
  */
 export async function createNote(
-    data: Pick<TablesInsert<"notes">, "title" | "content" | "is_markdown">
+    data: Pick<TablesInsert<"notes">, "title" | "content" | "is_markdown" | "tags">
 ): Promise<ActionResponse> {
     const supabase = await createClient();
 
@@ -41,6 +41,7 @@ export async function createNote(
         content: data.content,
         is_markdown: data.is_markdown ?? false,
         pinned: false,
+        tags: data.tags ?? [],
     });
 
     if (error) {
@@ -57,7 +58,7 @@ export async function createNote(
  */
 export async function updateNote(
     id: string,
-    data: Pick<TablesUpdate<"notes">, "title" | "content" | "is_markdown">
+    data: Pick<TablesUpdate<"notes">, "title" | "content" | "is_markdown" | "tags">
 ): Promise<ActionResponse> {
     const supabase = await createClient();
 
@@ -67,6 +68,7 @@ export async function updateNote(
             title: data.title || null,
             content: data.content,
             is_markdown: data.is_markdown,
+            tags: data.tags ?? [],
             updated_at: new Date().toISOString(),
         })
         .eq("id", id);

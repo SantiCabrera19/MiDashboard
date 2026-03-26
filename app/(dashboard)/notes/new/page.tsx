@@ -6,12 +6,14 @@ import Link from "next/link";
 import TipTapEditor from "@/components/editor/TipTapEditor";
 import { Button, Input, useToast } from "@/components/ui";
 import { createNote } from "@/lib/actions/notes";
+import TagSelector from "../TagSelector";
 
 export default function NewNotePage() {
     const router = useRouter();
     const toast = useToast();
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+    const [tags, setTags] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
 
     async function handleSave() {
@@ -32,6 +34,7 @@ export default function NewNotePage() {
             title,
             content,
             is_markdown: false,
+            tags,
         };
 
         const result = await createNote(payload);
@@ -88,6 +91,8 @@ export default function NewNotePage() {
                         autoFocus
                     />
                 </div>
+
+                <TagSelector selected={tags} onChange={setTags} />
 
                 <div>
                     <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">

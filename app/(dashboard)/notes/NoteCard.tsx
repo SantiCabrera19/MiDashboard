@@ -74,6 +74,16 @@ export default function NoteCard({ note }: NoteCardProps) {
                         }}
                     />
 
+                    {note.tags && note.tags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                            {note.tags.map((tag) => (
+                                <Badge key={tag} variant="default">
+                                    {tag}
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Date */}
                     {note.updated_at && (
                         <p className="mt-3 text-xs text-[var(--color-text-muted)]">

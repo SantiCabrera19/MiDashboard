@@ -10,9 +10,11 @@
 import type { Metadata } from "next";
 import { getUser } from "@/lib/actions/auth";
 import { getUserProfile, getUserPreferences } from "@/lib/data/settings";
+import { getGoogleCalendarStatus } from "@/lib/actions/google-calendar";
 import ProfileSection from "./ProfileSection";
 import WidgetVisibilitySection from "./WidgetVisibilitySection";
 import NotificationPrefsSection from "./NotificationPrefsSection";
+import GoogleCalendarSection from "./GoogleCalendarSection";
 
 export const metadata: Metadata = {
     title: "Settings",
@@ -20,11 +22,12 @@ export const metadata: Metadata = {
 };
 
 export default async function SettingsPage() {
-    // Parallel fetch — user, profile, and preferences at once
-    const [user, profile, preferences] = await Promise.all([
+    // Parallel fetch — user, profile, preferences, and Google Calendar status
+    const [user, profile, preferences, googleCalendarStatus] = await Promise.all([
         getUser(),
         getUserProfile(),
         getUserPreferences(),
+        getGoogleCalendarStatus(),
     ]);
 
     // Extract Google OAuth metadata (fallbacks)
@@ -68,6 +71,9 @@ export default async function SettingsPage() {
                     prefs={preferences.notification_prefs}
                 />
             )}
+
+            {/* ── Section 4: Google Calendar ── */}
+            <GoogleCalendarSection status={googleCalendarStatus} />
         </div>
     );
 }
