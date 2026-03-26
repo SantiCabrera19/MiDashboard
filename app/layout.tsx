@@ -27,6 +27,16 @@ export const metadata: Metadata = {
   },
   description:
     "Personal dashboard for notes, finances, calendar, and YouTube — built with Next.js and Supabase.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "MeDashboard",
+  },
+  themeColor: "#0d1117",
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 // ─── Root Layout ────────────────────────────────────────
